@@ -1,4 +1,4 @@
-import { err, ok,type Result } from "@sipilian/core";
+import { err, ok, type Result } from "@sipilian/core";
 
 /**
  * Canonical role identifiers stored on the user row.

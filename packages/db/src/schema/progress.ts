@@ -1,5 +1,14 @@
 import { relations, sql } from "drizzle-orm";
-import { date, integer, numeric, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  date,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 import { lessons, questions } from "./content";
