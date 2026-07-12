@@ -29,7 +29,11 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["packages/*/vitest.config.ts", "eslint.config.js"],
+          allowDefaultProject: [
+            "packages/*/vitest.config.ts",
+            "packages/*/drizzle.config.ts",
+            "eslint.config.js",
+          ],
         },
         tsconfigRootDir: import.meta.dirname,
       },
