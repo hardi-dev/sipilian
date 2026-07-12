@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getTableConfig } from "drizzle-orm/pg-core";
 
 import {
   dailyActivity,
@@ -35,5 +36,11 @@ describe("progress schema", () => {
   it("defines relation helpers", () => {
     expect(lessonCompletionsRelations).toBeDefined();
     expect(userQuestionStatesRelations).toBeDefined();
+  });
+
+  it("declares a unique (user_id, question_id) on user_question_states", () => {
+    const config = getTableConfig(userQuestionStates);
+
+    expect(config.uniqueConstraints.some((u) => u.columns.length === 2)).toBe(true);
   });
 });

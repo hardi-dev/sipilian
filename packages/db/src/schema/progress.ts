@@ -39,24 +39,30 @@ export type LessonCompletionInsertRow = typeof lessonCompletions.$inferInsert;
 /**
  * Per-(user, question) spaced-repetition state persisted between reviews.
  */
-export const userQuestionStates = pgTable("user_question_states", {
-  id: uuid("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  questionId: uuid("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
-  repetitions: integer("repetitions").notNull().default(0),
-  intervalDays: integer("interval_days").notNull().default(0),
-  easeFactor: numeric("ease_factor", { precision: 3, scale: 2 }).notNull().default("2.50"),
-  lastReviewedAt: timestamp("last_reviewed_at", { withTimezone: true }),
-  nextReviewAt: timestamp("next_review_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const userQuestionStates = pgTable(
+  "user_question_states",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    repetitions: integer("repetitions").notNull().default(0),
+    intervalDays: integer("interval_days").notNull().default(0),
+    easeFactor: numeric("ease_factor", { precision: 3, scale: 2 }).notNull().default("2.50"),
+    lastReviewedAt: timestamp("last_reviewed_at", { withTimezone: true }),
+    nextReviewAt: timestamp("next_review_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("user_question_states_user_question_unique").on(table.userId, table.questionId),
+  ],
+);
 
 export type UserQuestionStateRow = typeof userQuestionStates.$inferSelect;
 

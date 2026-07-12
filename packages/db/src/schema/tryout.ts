@@ -80,11 +80,11 @@ export const tryoutAttempts = pgTable("tryout_attempts", {
     .references(() => tryoutPackages.id, { onDelete: "cascade" }),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
-  twkScore: integer("twk_score").notNull(),
-  tiuScore: integer("tiu_score").notNull(),
-  tkpScore: integer("tkp_score").notNull(),
-  totalScore: integer("total_score").notNull(),
-  passedAll: boolean("passed_all").notNull(),
+  twkScore: integer("twk_score"),
+  tiuScore: integer("tiu_score"),
+  tkpScore: integer("tkp_score"),
+  totalScore: integer("total_score"),
+  passedAll: boolean("passed_all"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
