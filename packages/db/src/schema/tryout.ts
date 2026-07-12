@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { boolean, integer, jsonb, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 import { questions } from "./content";
@@ -63,7 +63,7 @@ export const tryoutAttempts = pgTable("tryout_attempts", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   packageId: uuid("package_id")

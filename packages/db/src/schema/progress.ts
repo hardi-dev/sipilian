@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { date, integer, numeric, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { date, integer, numeric, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 import { lessons, questions } from "./content";
@@ -11,7 +11,7 @@ export const lessonCompletions = pgTable("lesson_completions", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   lessonId: uuid("lesson_id")
@@ -34,7 +34,7 @@ export const userQuestionStates = pgTable("user_question_states", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   questionId: uuid("question_id")
@@ -60,7 +60,7 @@ export const userStats = pgTable("user_stats", {
   id: uuid("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" })
     .unique(),
@@ -86,7 +86,7 @@ export const dailyActivity = pgTable(
     id: uuid("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     activityDate: date("activity_date").notNull(),
