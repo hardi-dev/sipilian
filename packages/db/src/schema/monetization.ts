@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { pgEnum, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 
@@ -18,7 +18,7 @@ export const entitlements = pgTable(
     id: uuid("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     plan: entitlementPlanEnum("plan").notNull().default("free"),

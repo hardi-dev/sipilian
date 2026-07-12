@@ -24,4 +24,10 @@ describe("auth schema", () => {
   it("defines verifications table", () => {
     expect(tableName(verifications)).toBe("verifications");
   });
+
+  it("gives users a role column defaulting to user", () => {
+    expect(users.role.name).toBe("role");
+    expect(users.role.notNull).toBe(true);
+    expect(users.role.default).toBe("user");
+  });
 });
