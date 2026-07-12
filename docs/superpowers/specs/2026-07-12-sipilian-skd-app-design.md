@@ -438,9 +438,12 @@ dimensi: **struktur & pola**, **penamaan & API**, dan **override ESLint**. Kolom
   impor dalam (`@sipilian/core/src/...`) dilarang.
 - **Override ESLint:** pertahankan ban kemurnian `no-restricted-imports`
   (`@sipilian/db`, `drizzle-orm`, `@neondatabase/serverless`, `react`,
-  `react-native`, `**/apps/**`); **tambah** `no-restricted-globals` untuk `Date`,
-  `Math.random`, `setTimeout`, `setInterval` di `packages/core/src/**` (kecuali
-  `*.test.ts`). **Penegakan: lint.**
+  `react-native`, `**/apps/**`); **tambah** larangan sumber non-determinisme di
+  `packages/core/src/**` (kecuali `*.test.ts`), tepat sasaran agar operasi tanggal
+  deterministik tetap boleh: `Math.random` & `Date.now` via `no-restricted-properties`;
+  `setTimeout`/`setInterval` via `no-restricted-globals`; `new Date()` tanpa argumen
+  via `no-restricted-syntax`. `Date.parse(...)`, `new Date(iso)`, dan
+  `Math.max/round/abs` **tetap boleh**. **Penegakan: lint.**
 
 #### 9.8.2 `packages/db`
 
