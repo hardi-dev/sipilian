@@ -224,14 +224,47 @@ export default tseslint.config(
     },
   },
   {
+    files: ["packages/auth/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "react-native", message: "auth: react-native only in the expo client file." },
+          ],
+          patterns: ["**/apps/**"],
+        },
+      ],
+    },
+  },
+  {
+    files: ["packages/auth/src/server.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "react", message: "server.ts must stay UI-free." },
+            { name: "react-native", message: "server.ts must stay UI-free." },
+          ],
+          patterns: ["**/apps/**"],
+        },
+      ],
+    },
+  },
+  {
     files: ["**/vitest.config.ts", "**/drizzle.config.ts"],
     rules: {
       "jsdoc/require-jsdoc": "off",
       "max-lines": "off",
       "max-lines-per-function": "off",
       "sonarjs/no-duplicate-string": "off",
+      "sonarjs/no-clear-text-protocols": "off",
       "no-restricted-properties": "off",
       "no-restricted-globals": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
       "@typescript-eslint/no-unnecessary-condition": "off",
       "@typescript-eslint/no-useless-default-assignment": "off",
@@ -246,6 +279,7 @@ export default tseslint.config(
       "max-lines": "off",
       "max-lines-per-function": "off",
       "sonarjs/no-duplicate-string": "off",
+      "sonarjs/no-clear-text-protocols": "off",
       "no-restricted-properties": "off",
       "no-restricted-globals": "off",
     },
