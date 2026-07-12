@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/drizzle/**",
       "**/.turbo/**",
       "**/coverage/**",
+      "**/.worktrees/**",
       "**/node_modules/**",
     ],
   },
@@ -29,7 +30,11 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["packages/*/vitest.config.ts", "eslint.config.js"],
+          allowDefaultProject: [
+            "packages/*/vitest.config.ts",
+            "packages/*/drizzle.config.ts",
+            "eslint.config.js",
+          ],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -219,7 +224,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/vitest.config.ts"],
+    files: ["**/vitest.config.ts", "**/drizzle.config.ts"],
     rules: {
       "jsdoc/require-jsdoc": "off",
       "max-lines": "off",
