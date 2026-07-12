@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/drizzle/**",
       "**/.turbo/**",
       "**/coverage/**",
+      "**/.worktrees/**",
       "**/node_modules/**",
     ],
   },
