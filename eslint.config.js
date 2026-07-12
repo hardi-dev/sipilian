@@ -224,7 +224,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/vitest.config.ts"],
+    files: ["**/vitest.config.ts", "**/drizzle.config.ts"],
     rules: {
       "jsdoc/require-jsdoc": "off",
       "max-lines": "off",
