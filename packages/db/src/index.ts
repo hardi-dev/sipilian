@@ -1,1 +1,2 @@
-export const DB_PACKAGE_NAME = "@sipilian/db";
+export type { Db } from "./client";
+export * from "./client";
