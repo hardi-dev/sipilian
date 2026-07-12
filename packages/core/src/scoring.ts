@@ -7,7 +7,8 @@ const POINTS_PER_CORRECT = 5;
 /**
  * Machine-readable code for a handled scoring failure.
  */
-export type ScoringErrorCode = "negative_correct_count" | "invalid_tkp_weight";
+export type ScoringErrorCode =
+  "negative_correct_count" | "non_integer_correct_count" | "invalid_tkp_weight";
 
 /**
  * A handled scoring error returned instead of throwing.
@@ -44,6 +45,10 @@ export interface ObjectiveScoreInput {
 export const scoreObjectiveSubtest = (
   input: ObjectiveScoreInput,
 ): Result<SubtestScore, ScoringError> => {
+  if (!Number.isInteger(input.correctCount)) {
+    return err({ code: "non_integer_correct_count", message: "correctCount must be an integer" });
+  }
+
   if (input.correctCount < 0) {
     return err({ code: "negative_correct_count", message: "correctCount must be >= 0" });
   }
@@ -72,7 +77,9 @@ export interface TkpScoreInput {
  * @returns Ok with the subtest score, or Err when any weight is outside 1..5.
  */
 export const scoreTkpSubtest = (input: TkpScoreInput): Result<SubtestScore, ScoringError> => {
-  const hasInvalidWeight = input.selectedWeights.some((weight) => weight < 1 || weight > 5);
+  const hasInvalidWeight = input.selectedWeights.some(
+    (weight) => !Number.isInteger(weight) || weight < 1 || weight > 5,
+  );
 
   if (hasInvalidWeight) {
     return err({ code: "invalid_tkp_weight", message: "TKP weights must be within 1..5" });
@@ -108,6 +115,6 @@ export const scoreTryout = (subtests: readonly SubtestScore[]): TryoutScore => {
   return {
     subtests,
     totalScore,
-    passedAll: subtests.every((subtest) => subtest.passed),
+    passedAll: subtests.length > 0 && subtests.every((subtest) => subtest.passed),
   };
 };

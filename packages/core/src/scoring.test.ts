@@ -36,6 +36,16 @@ describe("scoreObjectiveSubtest", () => {
       expect(result.error.code).toBe("negative_correct_count");
     }
   });
+
+  it("rejects a non-integer correct count", () => {
+    const result = scoreObjectiveSubtest({ kind: "tiu", correctCount: 2.5, passingGrade: 80 });
+
+    expect(isErr(result)).toBe(true);
+
+    if (isErr(result)) {
+      expect(result.error.code).toBe("non_integer_correct_count");
+    }
+  });
 });
 
 describe("scoreTkpSubtest", () => {
@@ -53,6 +63,16 @@ describe("scoreTkpSubtest", () => {
 
   it("rejects a weight outside the 1..5 range", () => {
     const result = scoreTkpSubtest({ selectedWeights: [5, 6], passingGrade: 10 });
+
+    expect(isErr(result)).toBe(true);
+
+    if (isErr(result)) {
+      expect(result.error.code).toBe("invalid_tkp_weight");
+    }
+  });
+
+  it("rejects a non-integer weight", () => {
+    const result = scoreTkpSubtest({ selectedWeights: [3, 2.5], passingGrade: 10 });
 
     expect(isErr(result)).toBe(true);
 
@@ -85,6 +105,13 @@ describe("scoreTryout", () => {
 
     const result = scoreTryout(subtests);
 
+    expect(result.passedAll).toBe(false);
+  });
+
+  it("fails for an empty subtest list", () => {
+    const result = scoreTryout([]);
+
+    expect(result.totalScore).toBe(0);
     expect(result.passedAll).toBe(false);
   });
 });
