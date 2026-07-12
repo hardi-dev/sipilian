@@ -291,6 +291,104 @@ Config final (mengintegrasikan seluruh keputusan di atas). Catatan penyesuaian d
 draft awal: `files` mencakup `**/*.tsx`, dan paket domain murni memakai
 `packages/core` (bukan `shared`).
 
+#### 9.7.1 Penjelasan setiap rule (versi final)
+
+**Blok global**
+
+| Item | Nilai | Arti |
+|---|---|---|
+| `ignores` | `dist`, `drizzle`, `.turbo`, `node_modules` | Folder ini tidak di-lint sama sekali |
+| `js.configs.recommended` | — | Aturan dasar ESLint untuk JS berlaku di semua file |
+| `prettier` (paling akhir) | — | Mematikan aturan ESLint yang bentrok dengan format Prettier |
+
+**Blok utama — `files: ["**/*.ts", "**/*.tsx"]`** (berlaku ke `.ts` DAN `.tsx`)
+
+Setup:
+
+| Item | Arti |
+|---|---|
+| `extends: strictTypeChecked` | Aturan TS paling ketat + berbasis analisis tipe |
+| `extends: stylisticTypeChecked` | Aturan gaya penulisan TS berbasis tipe |
+| `plugins` | Mengaktifkan `@stylistic`, `simple-import-sort`, `jsdoc`, `sonarjs` |
+| `projectService: true` | Memakai TypeScript project service untuk aturan type-aware |
+
+Aturan inti:
+
+| Rule | Setelan | Arti |
+|---|---|---|
+| `sonarjs/*` (recommended) | error | Seluruh preset SonarJS aktif sebagai error |
+| `sonarjs/cognitive-complexity` | `10` | Fungsi dengan kompleksitas kognitif > 10 ditolak |
+| `simple-import-sort/imports` | error | Urutan `import` wajib rapi (auto-fix) |
+| `simple-import-sort/exports` | error | Urutan `export` wajib rapi (auto-fix) |
+| `no-restricted-syntax` #1 | error | Larang tipe objek inline — `x: { a: number }` harus jadi `interface`/`type` bernama |
+| `no-restricted-syntax` #2 | error | Larang union literal inline pada anotasi — `x: "a" \| "b"` harus jadi `type` bernama |
+
+Naming convention (`@typescript-eslint/naming-convention`):
+
+| Target | Format wajib |
+|---|---|
+| `default` | `camelCase` |
+| `variable` | `camelCase` atau `UPPER_CASE` |
+| `parameter` | `camelCase` (boleh diawali `_`) |
+| `typeLike` (type/interface/class/enum) | `PascalCase` |
+| `enumMember` | `PascalCase` atau `UPPER_CASE` |
+| `variable` const + exported | `camelCase`, `PascalCase`, atau `UPPER_CASE` |
+| `objectLiteralProperty` | bebas (null) — supaya key `snake_case` payload API/DB boleh |
+| `import` | `camelCase` atau `PascalCase` |
+
+> Catatan: `typeProperty` sengaja **tidak** dilonggarkan → interface/type tulisan
+> tangan tetap `camelCase`; `snake_case` hanya lewat objek literal (Zod) & tipe
+> infer Drizzle.
+
+Batas ukuran & kompleksitas:
+
+| Rule | Setelan | Arti |
+|---|---|---|
+| `max-lines` | `300`, skip kosong & komentar | Maks 300 baris kode per file |
+| `max-lines-per-function` | `20`, skip kosong/komentar, `IIFEs: true` | Maks 20 baris per fungsi (termasuk komponen React, tanpa kecuali) |
+| `max-params` | `4` | Lebih dari 4 argumen → pakai objek opsi |
+| `max-depth` | `3` | Maks 3 tingkat nesting blok |
+| `max-nested-callbacks` | `3` | Maks 3 callback bersarang |
+| `complexity` | `10` | Cyclomatic complexity maks 10 (pelengkap cognitive) |
+
+JSDoc:
+
+| Rule | Setelan | Arti |
+|---|---|---|
+| `jsdoc/require-jsdoc` | FunctionDeclaration, MethodDefinition, named arrow; `publicOnly: false` | JSDoc wajib di semua fungsi/metode/named arrow (bukan hanya publik) |
+| `jsdoc/no-types` | error | Dilarang menulis tipe di dalam JSDoc (tipe dari TS) |
+| `jsdoc/check-alignment` | error | Perataan blok `/** */` harus rapi |
+| `jsdoc/check-param-names` | error | Nama `@param` harus cocok parameter asli |
+| `jsdoc/check-tag-names` (`typed: true`) | error | Hanya tag valid; mode TS |
+| `jsdoc/require-description` | error | Wajib ada deskripsi |
+| `jsdoc/require-param` | error | Wajib `@param` untuk tiap parameter |
+| `jsdoc/require-param-description` | error | Tiap `@param` wajib deskripsi |
+| `jsdoc/require-returns` | error | Wajib `@returns` |
+| `jsdoc/require-returns-description` | error | `@returns` wajib deskripsi |
+| `jsdoc/require-param-type` | off | Tidak wajib tipe di `@param` (karena TS) |
+| `jsdoc/require-returns-type` | off | Tidak wajib tipe di `@returns` (karena TS) |
+
+Spasi semantik (`@stylistic/padding-line-between-statements`, semua auto-fix):
+
+| Aturan | Arti |
+|---|---|
+| after `directive` | Baris kosong setelah direktif; antar-direktif bebas |
+| after `import` | Baris kosong setelah blok `import`; antar-`import` bebas |
+| after `const/let/var` | Baris kosong setelah deklarasi variabel; antar-deklarasi bebas |
+| before `return` | Baris kosong sebelum `return` |
+| around `if/for/while/switch/try/function/class` | Baris kosong sebelum & sesudah blok-blok ini |
+
+**Blok override per-paket**
+
+| Blok (`files`) | Aturan | Arti |
+|---|---|---|
+| `packages/core/**/*.ts` | `no-restricted-imports` | `core` harus murni: dilarang impor `@sipilian/db`, `drizzle-orm`, `@neondatabase/serverless` (bebas DB), `react`, `react-native` (bebas UI), dan `**/apps/**` |
+| `packages/db/**/*.ts` | `no-restricted-imports` | `db` layer data: dilarang impor `react`, `react-native`, dan `**/apps/**` (boleh pakai `core`) |
+| `packages/db/src/schema/**/*.ts` | `sonarjs/no-duplicate-string: off` | Skema Drizzle wajar mengulang literal (mis. `"cascade"`) |
+| `**/*.test.ts`, `**/vitest.config.ts` | beberapa off | Dilonggarkan: `no-non-null-assertion`, `require-jsdoc`, `max-lines`, `max-lines-per-function`, `sonarjs/no-duplicate-string` |
+
+#### 9.7.2 Config (acuan)
+
 ```js
 export default tseslint.config(
   {
