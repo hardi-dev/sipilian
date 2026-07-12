@@ -291,7 +291,93 @@ Config final (mengintegrasikan seluruh keputusan di atas). Catatan penyesuaian d
 draft awal: `files` mencakup `**/*.tsx`, dan paket domain murni memakai
 `packages/core` (bukan `shared`).
 
-#### 9.7.1 Aturan spasi wajib — `padding-line-between-statements` (PENTING)
+#### 9.7.1 Penjelasan setiap rule (versi final)
+
+**Blok global**
+
+| Item | Nilai | Arti |
+|---|---|---|
+| `ignores` | `dist`, `drizzle`, `.turbo`, `node_modules` | Folder ini tidak di-lint sama sekali |
+| `js.configs.recommended` | — | Aturan dasar ESLint untuk JS berlaku di semua file |
+| `prettier` (paling akhir) | — | Mematikan aturan ESLint yang bentrok dengan format Prettier |
+
+**Blok utama — `files: ["**/*.ts", "**/*.tsx"]`** (berlaku ke `.ts` DAN `.tsx`)
+
+Setup:
+
+| Item | Arti |
+|---|---|
+| `extends: strictTypeChecked` | Aturan TS paling ketat + berbasis analisis tipe |
+| `extends: stylisticTypeChecked` | Aturan gaya penulisan TS berbasis tipe |
+| `plugins` | Mengaktifkan `@stylistic`, `simple-import-sort`, `jsdoc`, `sonarjs` |
+| `projectService: true` | Memakai TypeScript project service untuk aturan type-aware |
+
+Aturan inti:
+
+| Rule | Setelan | Arti |
+|---|---|---|
+| `sonarjs/*` (recommended) | error | Seluruh preset SonarJS aktif sebagai error |
+| `sonarjs/cognitive-complexity` | `10` | Fungsi dengan kompleksitas kognitif > 10 ditolak |
+| `simple-import-sort/imports` | error | Urutan `import` wajib rapi (auto-fix) |
+| `simple-import-sort/exports` | error | Urutan `export` wajib rapi (auto-fix) |
+| `no-restricted-syntax` #1 | error | Larang tipe objek inline — `x: { a: number }` harus jadi `interface`/`type` bernama |
+| `no-restricted-syntax` #2 | error | Larang union literal inline pada anotasi — `x: "a" \| "b"` harus jadi `type` bernama |
+
+Naming convention (`@typescript-eslint/naming-convention`):
+
+| Target | Format wajib |
+|---|---|
+| `default` | `camelCase` |
+| `variable` | `camelCase` atau `UPPER_CASE` |
+| `parameter` | `camelCase` (boleh diawali `_`) |
+| `typeLike` (type/interface/class/enum) | `PascalCase` |
+| `enumMember` | `PascalCase` atau `UPPER_CASE` |
+| `variable` const + exported | `camelCase`, `PascalCase`, atau `UPPER_CASE` |
+| `objectLiteralProperty` | bebas (null) — supaya key `snake_case` payload API/DB boleh |
+| `import` | `camelCase` atau `PascalCase` |
+
+> Catatan: `typeProperty` sengaja **tidak** dilonggarkan → interface/type tulisan
+> tangan tetap `camelCase`; `snake_case` hanya lewat objek literal (Zod) & tipe
+> infer Drizzle.
+
+Batas ukuran & kompleksitas:
+
+| Rule | Setelan | Arti |
+|---|---|---|
+| `max-lines` | `300`, skip kosong & komentar | Maks 300 baris kode per file |
+| `max-lines-per-function` | `20`, skip kosong/komentar, `IIFEs: true` | Maks 20 baris per fungsi (termasuk komponen React, tanpa kecuali) |
+| `max-params` | `4` | Lebih dari 4 argumen → pakai objek opsi |
+| `max-depth` | `3` | Maks 3 tingkat nesting blok |
+| `max-nested-callbacks` | `3` | Maks 3 callback bersarang |
+| `complexity` | `10` | Cyclomatic complexity maks 10 (pelengkap cognitive) |
+
+JSDoc:
+
+| Rule | Setelan | Arti |
+|---|---|---|
+| `jsdoc/require-jsdoc` | FunctionDeclaration, MethodDefinition, named arrow; `publicOnly: false` | JSDoc wajib di semua fungsi/metode/named arrow (bukan hanya publik) |
+| `jsdoc/no-types` | error | Dilarang menulis tipe di dalam JSDoc (tipe dari TS) |
+| `jsdoc/check-alignment` | error | Perataan blok `/** */` harus rapi |
+| `jsdoc/check-param-names` | error | Nama `@param` harus cocok parameter asli |
+| `jsdoc/check-tag-names` (`typed: true`) | error | Hanya tag valid; mode TS |
+| `jsdoc/require-description` | error | Wajib ada deskripsi |
+| `jsdoc/require-param` | error | Wajib `@param` untuk tiap parameter |
+| `jsdoc/require-param-description` | error | Tiap `@param` wajib deskripsi |
+| `jsdoc/require-returns` | error | Wajib `@returns` |
+| `jsdoc/require-returns-description` | error | `@returns` wajib deskripsi |
+| `jsdoc/require-param-type` | off | Tidak wajib tipe di `@param` (karena TS) |
+| `jsdoc/require-returns-type` | off | Tidak wajib tipe di `@returns` (karena TS) |
+
+**Blok override per-paket**
+
+| Blok (`files`) | Aturan | Arti |
+|---|---|---|
+| `packages/core/**/*.ts` | `no-restricted-imports` | `core` harus murni: dilarang impor `@sipilian/db`, `drizzle-orm`, `@neondatabase/serverless` (bebas DB), `react`, `react-native` (bebas UI), dan `**/apps/**` |
+| `packages/db/**/*.ts` | `no-restricted-imports` | `db` layer data: dilarang impor `react`, `react-native`, dan `**/apps/**` (boleh pakai `core`) |
+| `packages/db/src/schema/**/*.ts` | `sonarjs/no-duplicate-string: off` | Skema Drizzle wajar mengulang literal (mis. `"cascade"`) |
+| `**/*.test.ts`, `**/vitest.config.ts` | beberapa off | Dilonggarkan: `no-non-null-assertion`, `require-jsdoc`, `max-lines`, `max-lines-per-function`, `sonarjs/no-duplicate-string` |
+
+#### 9.7.2 Aturan spasi wajib — `padding-line-between-statements` (PENTING)
 
 Berbeda dari Prettier (yang mengatur format), rule ini mengatur **spasi semantik
 antar-statement** dan ditegakkan sebagai **error (blocking di CI)**. Semua
@@ -325,175 +411,6 @@ function scoreTwk(correct: number) {
 
   return point;
 }
-```
-
-#### 9.7.2 Config (acuan)
-
-```js
-export default tseslint.config(
-  {
-    ignores: ["**/dist/**", "**/drizzle/**", "**/.turbo/**", "**/node_modules/**"],
-  },
-  js.configs.recommended,
-  {
-    files: ["**/*.ts", "**/*.tsx"],
-    extends: [...tseslint.configs.strictTypeChecked, ...tseslint.configs.stylisticTypeChecked],
-    plugins: {
-      "@stylistic": stylistic,
-      "simple-import-sort": simpleImportSort,
-      jsdoc,
-      sonarjs,
-    },
-    languageOptions: {
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-    rules: {
-      // SonarJS recommended preset + stricter cognitive complexity.
-      ...sonarjs.configs.recommended.rules,
-      "sonarjs/cognitive-complexity": ["error", 10],
-
-      // Import ordering (auto-fixable).
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
-
-      // No inline types — every type structure must be named.
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "TSTypeAnnotation TSTypeLiteral",
-          message: "Inline object types are not allowed. Extract to a named interface or type.",
-        },
-        {
-          selector: "TSTypeAnnotation > TSUnionType:has(TSLiteralType)",
-          message: "Inline literal unions are not allowed. Extract to a named type.",
-        },
-      ],
-
-      // Naming conventions.
-      "@typescript-eslint/naming-convention": [
-        "error",
-        { selector: "default", format: ["camelCase"] },
-        { selector: "variable", format: ["camelCase", "UPPER_CASE"] },
-        { selector: "parameter", format: ["camelCase"], leadingUnderscore: "allow" },
-        { selector: "typeLike", format: ["PascalCase"] },
-        { selector: "enumMember", format: ["PascalCase", "UPPER_CASE"] },
-        {
-          selector: "variable",
-          modifiers: ["const", "exported"],
-          format: ["camelCase", "PascalCase", "UPPER_CASE"],
-        },
-        // API/DB payloads use snake_case keys, so do not constrain object keys.
-        { selector: "objectLiteralProperty", format: null },
-        { selector: "import", format: ["camelCase", "PascalCase"] },
-      ],
-
-      // Max length (blank lines and comments are not counted).
-      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
-      "max-lines-per-function": [
-        "error",
-        { max: 20, skipBlankLines: true, skipComments: true, IIFEs: true },
-      ],
-      "max-params": ["error", 4],
-      "max-depth": ["error", 3],
-      "max-nested-callbacks": ["error", 3],
-      complexity: ["error", 10],
-
-      // JSDoc required on all declared functions & named arrows; types come from TS.
-      "jsdoc/require-jsdoc": [
-        "error",
-        {
-          publicOnly: false,
-          require: { FunctionDeclaration: true, MethodDefinition: true },
-          contexts: ["VariableDeclarator > ArrowFunctionExpression"],
-        },
-      ],
-      "jsdoc/no-types": "error",
-      "jsdoc/check-alignment": "error",
-      "jsdoc/check-param-names": "error",
-      "jsdoc/check-tag-names": ["error", { typed: true }],
-      "jsdoc/require-description": "error",
-      "jsdoc/require-param": "error",
-      "jsdoc/require-param-description": "error",
-      "jsdoc/require-returns": "error",
-      "jsdoc/require-returns-description": "error",
-      "jsdoc/require-param-type": "off",
-      "jsdoc/require-returns-type": "off",
-
-      // Semantic spacing (auto-fixable) — does not conflict with Prettier.
-      "@stylistic/padding-line-between-statements": [
-        "error",
-        { blankLine: "always", prev: "directive", next: "*" },
-        { blankLine: "any", prev: "directive", next: "directive" },
-        { blankLine: "always", prev: "import", next: "*" },
-        { blankLine: "any", prev: "import", next: "import" },
-        { blankLine: "always", prev: ["const", "let", "var"], next: "*" },
-        { blankLine: "any", prev: ["const", "let", "var"], next: ["const", "let", "var"] },
-        { blankLine: "always", prev: "*", next: "return" },
-        {
-          blankLine: "always",
-          prev: "*",
-          next: ["if", "for", "while", "switch", "try", "function", "class"],
-        },
-        {
-          blankLine: "always",
-          prev: ["if", "for", "while", "switch", "try", "function", "class"],
-          next: "*",
-        },
-      ],
-    },
-  },
-  {
-    // core must stay framework-free and pure — no DB, no UI runtime.
-    files: ["packages/core/**/*.ts"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            { name: "@sipilian/db", message: "core must not depend on the db layer" },
-            { name: "drizzle-orm", message: "core must stay framework/DB-free" },
-            { name: "@neondatabase/serverless", message: "core must stay framework/DB-free" },
-            { name: "react", message: "core must stay UI-free" },
-            { name: "react-native", message: "core must stay UI-free" },
-          ],
-          patterns: ["**/apps/**"],
-        },
-      ],
-    },
-  },
-  {
-    // db is a data layer — it may use core, but never the app/UI layer.
-    files: ["packages/db/**/*.ts"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        { paths: [{ name: "react" }, { name: "react-native" }], patterns: ["**/apps/**"] },
-      ],
-    },
-  },
-  {
-    // Drizzle schemas legitimately repeat string literals (e.g. "cascade").
-    files: ["packages/db/src/schema/**/*.ts"],
-    rules: {
-      "sonarjs/no-duplicate-string": "off",
-    },
-  },
-  {
-    // Tests: relax volume/ceremony rules that fight readable test files.
-    files: ["**/*.test.ts", "**/vitest.config.ts"],
-    rules: {
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "jsdoc/require-jsdoc": "off",
-      "max-lines": "off",
-      "max-lines-per-function": "off",
-      "sonarjs/no-duplicate-string": "off",
-    },
-  },
-  prettier,
-);
 ```
 
 > Aturan-aturan di §9 akan dituangkan juga ke `AGENTS.md` repo agar konsisten
