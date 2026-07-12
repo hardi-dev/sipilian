@@ -338,11 +338,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      exclude: [
-        "src/**/*.test.ts",
-        "src/index.ts",
-        "src/schema/index.ts",
-      ],
+      exclude: ["src/**/*.test.ts", "src/index.ts", "src/schema/index.ts"],
       thresholds: {
         lines: 80,
         functions: 80,
@@ -647,7 +643,9 @@ export const questionStatusEnum = pgEnum("question_status", ["draft", "published
  * Subtest kinds (TWK, TIU, TKP) along with passing-grade metadata.
  */
 export const subtests = pgTable("subtests", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   slug: varchar("slug", { length: 32 }).notNull().unique(),
   name: varchar("name", { length: 64 }).notNull(),
   passingGrade: integer("passing_grade").notNull(),
@@ -663,7 +661,9 @@ export type SubtestInsertRow = typeof subtests.$inferInsert;
  * Topic subdivisions within a subtest (e.g. TWK -> Nasionalisme).
  */
 export const topics = pgTable("topics", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   subtestId: uuid("subtest_id")
     .notNull()
     .references(() => subtests.id, { onDelete: "cascade" }),
@@ -680,7 +680,9 @@ export type TopicInsertRow = typeof topics.$inferInsert;
  * Ordered unit groups within a topic forming the learning path.
  */
 export const units = pgTable("units", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   topicId: uuid("topic_id")
     .notNull()
     .references(() => topics.id, { onDelete: "cascade" }),
@@ -698,7 +700,9 @@ export type UnitInsertRow = typeof units.$inferInsert;
  * Bite-sized lessons (5-10 questions) making up a unit.
  */
 export const lessons = pgTable("lessons", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   unitId: uuid("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -716,7 +720,9 @@ export type LessonInsertRow = typeof lessons.$inferInsert;
  * Question stems tagged to a topic; can appear in many lessons.
  */
 export const questions = pgTable("questions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   topicId: uuid("topic_id")
     .notNull()
     .references(() => topics.id, { onDelete: "cascade" }),
@@ -738,7 +744,9 @@ export type QuestionInsertRow = typeof questions.$inferInsert;
  * `is_correct` is used for TWK/TIU; `weight` (1..5) for TKP.
  */
 export const questionOptions = pgTable("question_options", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   questionId: uuid("question_id")
     .notNull()
     .references(() => questions.id, { onDelete: "cascade" }),
@@ -888,12 +896,7 @@ Create `packages/db/src/schema/tryout.test.ts`:
 ```ts
 import { describe, expect, it } from "vitest";
 
-import {
-  tryoutAnswers,
-  tryoutAttempts,
-  tryoutPackageQuestions,
-  tryoutPackages,
-} from "./tryout";
+import { tryoutAnswers, tryoutAttempts, tryoutPackageQuestions, tryoutPackages } from "./tryout";
 
 describe("tryout schema", () => {
   it("defines tryout_packages table", () => {
@@ -926,15 +929,7 @@ Create `packages/db/src/schema/tryout.ts`:
 ```ts
 import { relations } from "drizzle-orm";
 
-import {
-  boolean,
-  integer,
-  jsonb,
-  pgTable,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 import { sql } from "drizzle-orm";
 
@@ -953,7 +948,9 @@ export interface CompositionShape {
  * Headline metadata of a CAT tryout package.
  */
 export const tryoutPackages = pgTable("tryout_packages", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   slug: varchar("slug", { length: 64 }).notNull().unique(),
   name: varchar("name", { length: 128 }).notNull(),
   durationMinutes: integer("duration_minutes").notNull(),
@@ -972,7 +969,9 @@ export type TryoutPackageInsertRow = typeof tryoutPackages.$inferInsert;
  * Ordered list of questions making a tryout package.
  */
 export const tryoutPackageQuestions = pgTable("tryout_package_questions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   packageId: uuid("package_id")
     .notNull()
     .references(() => tryoutPackages.id, { onDelete: "cascade" }),
@@ -992,7 +991,9 @@ export type TryoutPackageQuestionInsertRow = typeof tryoutPackageQuestions.$infe
  * `userId` references the auth `users` table (wired in Task 8).
  */
 export const tryoutAttempts = pgTable("tryout_attempts", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id").notNull(),
   packageId: uuid("package_id")
     .notNull()
@@ -1015,7 +1016,9 @@ export type TryoutAttemptInsertRow = typeof tryoutAttempts.$inferInsert;
  * Per-question answer inside an attempt. `optionId` for TWK/TIU; `weight` for TKP.
  */
 export const tryoutAnswers = pgTable("tryout_answers", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   attemptId: uuid("attempt_id")
     .notNull()
     .references(() => tryoutAttempts.id, { onDelete: "cascade" }),
@@ -1036,19 +1039,16 @@ export const tryoutPackagesRelations = relations(tryoutPackages, ({ many }) => (
   attempts: many(tryoutAttempts),
 }));
 
-export const tryoutPackageQuestionsRelations = relations(
-  tryoutPackageQuestions,
-  ({ one }) => ({
-    pkg: one(tryoutPackages, {
-      fields: [tryoutPackageQuestions.packageId],
-      references: [tryoutPackages.id],
-    }),
-    question: one(questions, {
-      fields: [tryoutPackageQuestions.questionId],
-      references: [questions.id],
-    }),
+export const tryoutPackageQuestionsRelations = relations(tryoutPackageQuestions, ({ one }) => ({
+  pkg: one(tryoutPackages, {
+    fields: [tryoutPackageQuestions.packageId],
+    references: [tryoutPackages.id],
   }),
-);
+  question: one(questions, {
+    fields: [tryoutPackageQuestions.questionId],
+    references: [questions.id],
+  }),
+}));
 
 export const tryoutAttemptsRelations = relations(tryoutAttempts, ({ one, many }) => ({
   pkg: one(tryoutPackages, {
@@ -1127,12 +1127,7 @@ Create `packages/db/src/schema/progress.test.ts`:
 ```ts
 import { describe, expect, it } from "vitest";
 
-import {
-  dailyActivity,
-  lessonCompletions,
-  userQuestionStates,
-  userStats,
-} from "./progress";
+import { dailyActivity, lessonCompletions, userQuestionStates, userStats } from "./progress";
 
 describe("progress schema", () => {
   it("defines lesson_completions table", () => {
@@ -1165,15 +1160,7 @@ Create `packages/db/src/schema/progress.ts`:
 ```ts
 import { relations, sql } from "drizzle-orm";
 
-import {
-  date,
-  integer,
-  numeric,
-  pgTable,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { date, integer, numeric, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { lessons, questions } from "./content";
 
@@ -1181,7 +1168,9 @@ import { lessons, questions } from "./content";
  * Record of a user finishing a lesson, scoring it and earning XP.
  */
 export const lessonCompletions = pgTable("lesson_completions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id").notNull(),
   lessonId: uuid("lesson_id")
     .notNull()
@@ -1200,7 +1189,9 @@ export type LessonCompletionInsertRow = typeof lessonCompletions.$inferInsert;
  * Per-(user, question) spaced-repetition state persisted between reviews.
  */
 export const userQuestionStates = pgTable("user_question_states", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id").notNull(),
   questionId: uuid("question_id")
     .notNull()
@@ -1222,7 +1213,9 @@ export type UserQuestionStateInsertRow = typeof userQuestionStates.$inferInsert;
  * Aggregate gamification stats per user (single row per user via unique userId).
  */
 export const userStats = pgTable("user_stats", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id").notNull().unique(),
   totalXp: integer("total_xp").notNull().default(0),
   currentStreak: integer("current_streak").notNull().default(0),
@@ -1243,7 +1236,9 @@ export type UserStatInsertRow = typeof userStats.$inferInsert;
 export const dailyActivity = pgTable(
   "daily_activity",
   {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid("user_id").notNull(),
     activityDate: date("activity_date").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1348,13 +1343,7 @@ Create `packages/db/src/schema/monetization.ts`:
 ```ts
 import { sql } from "drizzle-orm";
 
-import {
-  pgEnum,
-  pgTable,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /**
  * Entitlement plan tiers used by the freemium model.
@@ -1368,7 +1357,9 @@ export const entitlementPlanEnum = pgEnum("entitlement_plan", ["free", "premium"
 export const entitlements = pgTable(
   "entitlements",
   {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid("user_id").notNull(),
     plan: entitlementPlanEnum("plan").notNull().default("free"),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -1472,14 +1463,7 @@ Create `packages/db/src/schema/auth.ts`:
 ```ts
 import { relations, sql } from "drizzle-orm";
 
-import {
-  boolean,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 import { entitlements } from "./monetization";
 
@@ -1487,7 +1471,9 @@ import { entitlements } from "./monetization";
  * Better Auth users table — root identity row.
  */
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
@@ -1504,7 +1490,9 @@ export type UserInsertRow = typeof users.$inferInsert;
  * Better Auth sessions table.
  */
 export const sessions = pgTable("sessions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   token: text("token").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1524,7 +1512,9 @@ export type SessionInsertRow = typeof sessions.$inferInsert;
  * Better Auth accounts table — links credentials / OAuth providers to a user.
  */
 export const accounts = pgTable("accounts", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
   userId: uuid("user_id")
@@ -1546,7 +1536,9 @@ export type AccountInsertRow = typeof accounts.$inferInsert;
  * Better Auth verifications table — ephemeral challenge tokens.
  */
 export const verifications = pgTable("verifications", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -1717,13 +1709,7 @@ Edit `packages/db/src/schema/monetization.ts` — add `relations` import and a `
 ```ts
 import { sql } from "drizzle-orm";
 
-import {
-  pgEnum,
-  pgTable,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 ```
 
 to:
@@ -1731,13 +1717,7 @@ to:
 ```ts
 import { relations, sql } from "drizzle-orm";
 
-import {
-  pgEnum,
-  pgTable,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 ```
