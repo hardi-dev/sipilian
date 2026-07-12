@@ -12,7 +12,7 @@ const createdEmails: string[] = [];
 // eslint-disable-next-line sonarjs/no-hardcoded-passwords
 const SIGNUP_PASSWORD = "Passw0rd!test";
 
-const hasRealDb = !process.env.DATABASE_URL?.includes("localhost:5432/dummy");
+const hasRealDb = !process.env.DATABASE_URL?.includes("localhost:5432/db");
 
 /**
  * Generates a unique test email so repeated runs never collide.
