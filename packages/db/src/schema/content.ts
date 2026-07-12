@@ -26,7 +26,9 @@ export const questionStatusEnum = pgEnum("question_status", ["draft", "published
  * Subtest kinds (TWK, TIU, TKP) along with passing-grade metadata.
  */
 export const subtests = pgTable("subtests", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   slug: varchar("slug", { length: 32 }).notNull().unique(),
   name: varchar("name", { length: 64 }).notNull(),
   passingGrade: integer("passing_grade").notNull(),
@@ -42,7 +44,9 @@ export type SubtestInsertRow = typeof subtests.$inferInsert;
  * Topic subdivisions within a subtest (e.g. TWK -> Nasionalisme).
  */
 export const topics = pgTable("topics", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   subtestId: uuid("subtest_id")
     .notNull()
     .references(() => subtests.id, { onDelete: "cascade" }),
@@ -59,7 +63,9 @@ export type TopicInsertRow = typeof topics.$inferInsert;
  * Ordered unit groups within a topic forming the learning path.
  */
 export const units = pgTable("units", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   topicId: uuid("topic_id")
     .notNull()
     .references(() => topics.id, { onDelete: "cascade" }),
@@ -77,7 +83,9 @@ export type UnitInsertRow = typeof units.$inferInsert;
  * Bite-sized lessons (5-10 questions) making up a unit.
  */
 export const lessons = pgTable("lessons", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   unitId: uuid("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -95,7 +103,9 @@ export type LessonInsertRow = typeof lessons.$inferInsert;
  * Question stems tagged to a topic; can appear in many lessons.
  */
 export const questions = pgTable("questions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   topicId: uuid("topic_id")
     .notNull()
     .references(() => topics.id, { onDelete: "cascade" }),
@@ -117,7 +127,9 @@ export type QuestionInsertRow = typeof questions.$inferInsert;
  * `is_correct` is used for TWK/TIU; `weight` (1..5) for TKP.
  */
 export const questionOptions = pgTable("question_options", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   questionId: uuid("question_id")
     .notNull()
     .references(() => questions.id, { onDelete: "cascade" }),

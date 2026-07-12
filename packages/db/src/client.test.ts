@@ -10,7 +10,7 @@ vi.mock("./env", () => {
   };
 });
 
-import { type Db,db } from "./client";
+import { type Db, db } from "./client";
 
 describe("db client", () => {
   it("exposes a defined Drizzle instance", () => {

@@ -1,13 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import {
-  date,
-  integer,
-  numeric,
-  pgTable,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { date, integer, numeric, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 import { lessons, questions } from "./content";
@@ -16,7 +8,9 @@ import { lessons, questions } from "./content";
  * Record of a user finishing a lesson, scoring it and earning XP.
  */
 export const lessonCompletions = pgTable("lesson_completions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -37,7 +31,9 @@ export type LessonCompletionInsertRow = typeof lessonCompletions.$inferInsert;
  * Per-(user, question) spaced-repetition state persisted between reviews.
  */
 export const userQuestionStates = pgTable("user_question_states", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -61,7 +57,9 @@ export type UserQuestionStateInsertRow = typeof userQuestionStates.$inferInsert;
  * Aggregate gamification stats per user (single row per user via unique userId).
  */
 export const userStats = pgTable("user_stats", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" })
@@ -85,10 +83,12 @@ export type UserStatInsertRow = typeof userStats.$inferInsert;
 export const dailyActivity = pgTable(
   "daily_activity",
   {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     activityDate: date("activity_date").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

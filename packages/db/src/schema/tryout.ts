@@ -1,13 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import {
-  boolean,
-  integer,
-  jsonb,
-  pgTable,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 import { users } from "./auth";
 import { questions } from "./content";
@@ -25,7 +17,9 @@ export interface CompositionShape {
  * Headline metadata of a CAT tryout package.
  */
 export const tryoutPackages = pgTable("tryout_packages", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   slug: varchar("slug", { length: 64 }).notNull().unique(),
   name: varchar("name", { length: 128 }).notNull(),
   durationMinutes: integer("duration_minutes").notNull(),
@@ -44,7 +38,9 @@ export type TryoutPackageInsertRow = typeof tryoutPackages.$inferInsert;
  * Ordered list of questions making a tryout package.
  */
 export const tryoutPackageQuestions = pgTable("tryout_package_questions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   packageId: uuid("package_id")
     .notNull()
     .references(() => tryoutPackages.id, { onDelete: "cascade" }),
@@ -64,7 +60,9 @@ export type TryoutPackageQuestionInsertRow = typeof tryoutPackageQuestions.$infe
  * `userId` references the auth `users` table (wired in Task 8).
  */
 export const tryoutAttempts = pgTable("tryout_attempts", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -89,7 +87,9 @@ export type TryoutAttemptInsertRow = typeof tryoutAttempts.$inferInsert;
  * Per-question answer inside an attempt. `optionId` for TWK/TIU; `weight` for TKP.
  */
 export const tryoutAnswers = pgTable("tryout_answers", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   attemptId: uuid("attempt_id")
     .notNull()
     .references(() => tryoutAttempts.id, { onDelete: "cascade" }),
@@ -110,19 +110,16 @@ export const tryoutPackagesRelations = relations(tryoutPackages, ({ many }) => (
   attempts: many(tryoutAttempts),
 }));
 
-export const tryoutPackageQuestionsRelations = relations(
-  tryoutPackageQuestions,
-  ({ one }) => ({
-    pkg: one(tryoutPackages, {
-      fields: [tryoutPackageQuestions.packageId],
-      references: [tryoutPackages.id],
-    }),
-    question: one(questions, {
-      fields: [tryoutPackageQuestions.questionId],
-      references: [questions.id],
-    }),
+export const tryoutPackageQuestionsRelations = relations(tryoutPackageQuestions, ({ one }) => ({
+  pkg: one(tryoutPackages, {
+    fields: [tryoutPackageQuestions.packageId],
+    references: [tryoutPackages.id],
   }),
-);
+  question: one(questions, {
+    fields: [tryoutPackageQuestions.questionId],
+    references: [questions.id],
+  }),
+}));
 
 export const tryoutAttemptsRelations = relations(tryoutAttempts, ({ one, many }) => ({
   pkg: one(tryoutPackages, {
