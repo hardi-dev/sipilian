@@ -9,6 +9,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
+import { users } from "./auth";
 import { questions } from "./content";
 
 /**
@@ -64,7 +65,9 @@ export type TryoutPackageQuestionInsertRow = typeof tryoutPackageQuestions.$infe
  */
 export const tryoutAttempts = pgTable("tryout_attempts", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: uuid("user_id").notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   packageId: uuid("package_id")
     .notNull()
     .references(() => tryoutPackages.id, { onDelete: "cascade" }),
@@ -126,6 +129,7 @@ export const tryoutAttemptsRelations = relations(tryoutAttempts, ({ one, many })
     fields: [tryoutAttempts.packageId],
     references: [tryoutPackages.id],
   }),
+  user: one(users, { fields: [tryoutAttempts.userId], references: [users.id] }),
   answers: many(tryoutAnswers),
 }));
 

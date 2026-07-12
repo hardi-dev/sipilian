@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgEnum,
   pgTable,
@@ -6,6 +6,8 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+
+import { users } from "./auth";
 
 /**
  * Entitlement plan tiers used by the freemium model.
@@ -20,7 +22,9 @@ export const entitlements = pgTable(
   "entitlements",
   {
     id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-    userId: uuid("user_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     plan: entitlementPlanEnum("plan").notNull().default("free"),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -32,3 +36,7 @@ export const entitlements = pgTable(
 export type EntitlementRow = typeof entitlements.$inferSelect;
 
 export type EntitlementInsertRow = typeof entitlements.$inferInsert;
+
+export const entitlementsRelations = relations(entitlements, ({ one }) => ({
+  user: one(users, { fields: [entitlements.userId], references: [users.id] }),
+}));

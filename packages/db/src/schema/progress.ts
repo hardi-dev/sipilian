@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import { users } from "./auth";
 import { lessons, questions } from "./content";
 
 /**
@@ -16,7 +17,9 @@ import { lessons, questions } from "./content";
  */
 export const lessonCompletions = pgTable("lesson_completions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: uuid("user_id").notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   lessonId: uuid("lesson_id")
     .notNull()
     .references(() => lessons.id, { onDelete: "cascade" }),
@@ -35,7 +38,9 @@ export type LessonCompletionInsertRow = typeof lessonCompletions.$inferInsert;
  */
 export const userQuestionStates = pgTable("user_question_states", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: uuid("user_id").notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   questionId: uuid("question_id")
     .notNull()
     .references(() => questions.id, { onDelete: "cascade" }),
@@ -57,7 +62,10 @@ export type UserQuestionStateInsertRow = typeof userQuestionStates.$inferInsert;
  */
 export const userStats = pgTable("user_stats", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: uuid("user_id").notNull().unique(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" })
+    .unique(),
   totalXp: integer("total_xp").notNull().default(0),
   currentStreak: integer("current_streak").notNull().default(0),
   longestStreak: integer("longest_streak").notNull().default(0),
@@ -78,7 +86,9 @@ export const dailyActivity = pgTable(
   "daily_activity",
   {
     id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-    userId: uuid("user_id").notNull(),
+    userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
     activityDate: date("activity_date").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -94,6 +104,7 @@ export const lessonCompletionsRelations = relations(lessonCompletions, ({ one })
     fields: [lessonCompletions.lessonId],
     references: [lessons.id],
   }),
+  user: one(users, { fields: [lessonCompletions.userId], references: [users.id] }),
 }));
 
 export const userQuestionStatesRelations = relations(userQuestionStates, ({ one }) => ({
@@ -101,4 +112,13 @@ export const userQuestionStatesRelations = relations(userQuestionStates, ({ one 
     fields: [userQuestionStates.questionId],
     references: [questions.id],
   }),
+  user: one(users, { fields: [userQuestionStates.userId], references: [users.id] }),
+}));
+
+export const userStatsRelations = relations(userStats, ({ one }) => ({
+  user: one(users, { fields: [userStats.userId], references: [users.id] }),
+}));
+
+export const dailyActivityRelations = relations(dailyActivity, ({ one }) => ({
+  user: one(users, { fields: [dailyActivity.userId], references: [users.id] }),
 }));
