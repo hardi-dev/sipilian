@@ -12,6 +12,8 @@ const createdEmails: string[] = [];
 // eslint-disable-next-line sonarjs/no-hardcoded-passwords
 const SIGNUP_PASSWORD = "Passw0rd!test";
 
+const hasRealDb = !process.env.DATABASE_URL?.includes("localhost:5432/dummy");
+
 /**
  * Generates a unique test email so repeated runs never collide.
  * @returns A unique example.com email address.
@@ -34,24 +36,27 @@ describe("auth server instance", () => {
 });
 
 describe("email auth integration (Neon dev)", () => {
-  it("signs up then signs in a new user defaulting to the user role", async () => {
-    const email = uniqueEmail();
-    const password = SIGNUP_PASSWORD;
+  it.skipIf(!hasRealDb)(
+    "signs up then signs in a new user defaulting to the user role",
+    async () => {
+      const email = uniqueEmail();
+      const password = SIGNUP_PASSWORD;
 
-    createdEmails.push(email);
+      createdEmails.push(email);
 
-    const signUp = await auth.api.signUpEmail({
-      body: { email, password, name: "Integration Test User" },
-    });
+      const signUp = await auth.api.signUpEmail({
+        body: { email, password, name: "Integration Test User" },
+      });
 
-    expect(signUp.user.email).toBe(email);
+      expect(signUp.user.email).toBe(email);
 
-    const signIn = await auth.api.signInEmail({ body: { email, password } });
+      const signIn = await auth.api.signInEmail({ body: { email, password } });
 
-    expect(signIn.token).toBeTruthy();
+      expect(signIn.token).toBeTruthy();
 
-    const [row] = await db.select().from(users).where(eq(users.email, email));
+      const [row] = await db.select().from(users).where(eq(users.email, email));
 
-    expect(row?.role).toBe("user");
-  });
+      expect(row?.role).toBe("user");
+    },
+  );
 });

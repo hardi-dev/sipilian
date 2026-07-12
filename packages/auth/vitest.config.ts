@@ -6,8 +6,9 @@ const fileEnv = loadEnv("test", "../../", "") as Record<string, string>;
 export default defineConfig({
   test: {
     env: {
-      DATABASE_URL: process.env.DATABASE_URL ?? fileEnv.DATABASE_URL ?? "",
-      BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? fileEnv.BETTER_AUTH_SECRET ?? "",
+      DATABASE_URL: process.env.DATABASE_URL ?? fileEnv.DATABASE_URL ?? "postgres://localhost:5432/dummy",
+      BETTER_AUTH_SECRET:
+        process.env.BETTER_AUTH_SECRET ?? fileEnv.BETTER_AUTH_SECRET ?? "x".repeat(32),
       BETTER_AUTH_URL:
         process.env.BETTER_AUTH_URL ?? fileEnv.BETTER_AUTH_URL ?? "http://localhost:3000",
       TRUSTED_ORIGINS:
