@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { isErr, isOk } from "./result";
-import {
-  scoreObjectiveSubtest,
-  scoreTkpSubtest,
-  scoreTryout,
-  type SubtestScore,
-} from "./scoring";
+import { scoreObjectiveSubtest, scoreTkpSubtest, scoreTryout, type SubtestScore } from "./scoring";
 
 describe("scoreObjectiveSubtest", () => {
   it("awards 5 points per correct answer and marks a pass", () => {

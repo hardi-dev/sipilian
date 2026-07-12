@@ -71,9 +71,7 @@ export interface TkpScoreInput {
  * @param input - The selected option weights and the passing grade.
  * @returns Ok with the subtest score, or Err when any weight is outside 1..5.
  */
-export const scoreTkpSubtest = (
-  input: TkpScoreInput,
-): Result<SubtestScore, ScoringError> => {
+export const scoreTkpSubtest = (input: TkpScoreInput): Result<SubtestScore, ScoringError> => {
   const hasInvalidWeight = input.selectedWeights.some((weight) => weight < 1 || weight > 5);
 
   if (hasInvalidWeight) {
