@@ -21,17 +21,17 @@ Skema tabel auth (`users`/`sessions`/`accounts`/`verifications`) **sudah ada** d
 
 ## 2. Keputusan Kunci (hasil brainstorming)
 
-| Aspek                | Keputusan                                                                 |
-| -------------------- | ------------------------------------------------------------------------- |
-| Metode auth          | Email + password; **verifikasi email OFF** untuk MVP                      |
-| Role                 | Kolom `role` minimal (default `"user"`); promosi `admin` **manual** (SQL) |
-| Adapter DB           | `drizzleAdapter` dengan `usePlural: true` + map skema eksplisit           |
-| Session              | Berbasis DB (tabel `sessions`), masa berlaku 7 hari                       |
-| Klien                | Subpath export `./client-web` (React/cookie) & `./client-expo` (token)    |
-| Env                  | `authEnv` Zod fail-fast (`secret`, `baseUrl`, `trustedOrigins`)           |
-| Testing              | Unit (env, roles, smoke) **+ integrasi** signup/signin vs Neon dev        |
-| DB test              | Reuse `neondb` dev; test **membersihkan** user yang dibuat                |
-| Error di `roles.ts`  | `Result` (tanpa throw), sesuai §9.3                                       |
+| Aspek               | Keputusan                                                                 |
+| ------------------- | ------------------------------------------------------------------------- |
+| Metode auth         | Email + password; **verifikasi email OFF** untuk MVP                      |
+| Role                | Kolom `role` minimal (default `"user"`); promosi `admin` **manual** (SQL) |
+| Adapter DB          | `drizzleAdapter` dengan `usePlural: true` + map skema eksplisit           |
+| Session             | Berbasis DB (tabel `sessions`), masa berlaku 7 hari                       |
+| Klien               | Subpath export `./client-web` (React/cookie) & `./client-expo` (token)    |
+| Env                 | `authEnv` Zod fail-fast (`secret`, `baseUrl`, `trustedOrigins`)           |
+| Testing             | Unit (env, roles, smoke) **+ integrasi** signup/signin vs Neon dev        |
+| DB test             | Reuse `neondb` dev; test **membersihkan** user yang dibuat                |
+| Error di `roles.ts` | `Result` (tanpa throw), sesuai §9.3                                       |
 
 ## 3. Struktur File & Tanggung Jawab
 
@@ -42,7 +42,7 @@ packages/auth/
 │  ├─ roles.ts          # ROLES + Role + isAdmin() + requireAdmin() (murni, Result)
 │  ├─ server.ts         # instance `auth` (Better Auth) — TANPA react/react-native
 │  ├─ client-web.ts     # `authClient` admin web (better-auth/react, cookie)
-│  ├─ client-expo.ts    # `authClient` mobile (@better-auth/expo, token)
+│  ├─ client-expo.ts    # DITUNDA ke Fase 6 (butuh toolchain Expo/RN)
 │  ├─ index.ts          # barrel: auth, ROLES, isAdmin, requireAdmin, tipe Session/AuthUser
 │  ├─ env.test.ts
 │  ├─ roles.test.ts
@@ -136,11 +136,13 @@ export interface AuthEnv {
 ```ts
 export const ROLES = { admin: "admin", user: "user" } as const;
 
-export type Role = "admin" | "user";               // named union (bukan inline)
+export type Role = "admin" | "user"; // named union (bukan inline)
 
-export interface RoleBearer { readonly role: string; }
+export interface RoleBearer {
+  readonly role: string;
+}
 
-export function isAdmin(user: RoleBearer): boolean;                // murni
+export function isAdmin(user: RoleBearer): boolean; // murni
 export function requireAdmin(user: RoleBearer): Result<RoleBearer, AuthError>;
 ```
 
@@ -214,6 +216,10 @@ lolos · coverage kode baru ≥ 80%**. Ditambah:
 
 ## 12. Di Luar Cakupan Fase 3 (roadmap)
 
+- **`client-expo.ts` — ditunda ke Fase 6.** Wrapper klien mobile butuh toolchain
+  Expo/RN (`@better-auth/expo/client`, `expo-secure-store`) yang baru terpasang di
+  Fase 6. Dukungan token mobile **sisi server** (plugin `expo()` di `server.ts`)
+  tetap dibangun di Fase 3, jadi klien tinggal disambungkan nanti.
 - Verifikasi email, reset password via email, social/OAuth login.
 - Plugin admin Better Auth (ban/impersonate) — role manual cukup untuk MVP.
 - Billing/entitlement enforcement (Fase api/mobile), rate limiting lanjutan.

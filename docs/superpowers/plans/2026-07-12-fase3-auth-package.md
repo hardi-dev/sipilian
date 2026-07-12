@@ -50,12 +50,14 @@ Modified outside the package: `packages/db/src/schema/auth.ts` (+`role`), a new 
 ## Task 1: Scaffold package + `env.ts`
 
 **Files:**
+
 - Create: `packages/auth/package.json`, `packages/auth/tsconfig.json`, `packages/auth/vitest.config.ts`
 - Create: `packages/auth/src/env.ts`, `packages/auth/src/env.test.ts`
 - Modify: `eslint.config.js` (add auth override blocks)
 - Modify: `.env` (local, gitignored), `.env.example`
 
 **Interfaces:**
+
 - Produces: `interface AuthEnv { readonly secret: string; readonly baseUrl: string; readonly trustedOrigins: readonly string[] }`; `buildAuthEnv(source: NodeJS.ProcessEnv): AuthEnv`; `authEnv: AuthEnv`.
 
 - [ ] **Step 1: Create `packages/auth/package.json`**
@@ -298,9 +300,11 @@ git commit -m "feat(auth): scaffold @sipilian/auth package with validated env"
 ## Task 2: `roles.ts` — role constants + guards
 
 **Files:**
+
 - Create: `packages/auth/src/roles.ts`, `packages/auth/src/roles.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Result`, `ok`, `err` from `@sipilian/core`.
 - Produces: `ROLES = { admin: "admin", user: "user" }`; `type Role = "admin" | "user"`; `interface RoleBearer { readonly role: string }`; `type AuthErrorCode = "not_admin"`; `interface AuthError { readonly code: AuthErrorCode; readonly message: string }`; `isAdmin(user: RoleBearer): boolean`; `requireAdmin(user: RoleBearer): Result<RoleBearer, AuthError>`.
 
@@ -419,11 +423,13 @@ git commit -m "feat(auth): add ROLES constants and isAdmin/requireAdmin guards"
 ## Task 3: Add `role` column to `users` (db migration)
 
 **Files:**
+
 - Modify: `packages/db/src/schema/auth.ts` (add `role` column to `users`)
 - Modify: `packages/db/src/schema/auth.test.ts` (assert the column)
 - Create: `packages/db/drizzle/0001_*.sql` (generated) + `packages/db/drizzle/meta/*` (generated)
 
 **Interfaces:**
+
 - Produces: `users.role` column, `notNull`, default `"user"`; `UserRow.role: string` (inferred).
 
 - [ ] **Step 1: Write the failing test** — append to `packages/db/src/schema/auth.test.ts`
@@ -468,6 +474,7 @@ Expected: `migrations applied successfully!`
 - [ ] **Step 7: Verify the column exists in Neon**
 
 Run (from `packages/db`):
+
 ```bash
 DATABASE_URL="$(grep -E '^DATABASE_URL=' ../../.env | cut -d= -f2-)" node --input-type=module -e '
 import { neon } from "@neondatabase/serverless";
@@ -476,6 +483,7 @@ const r = await sql`select column_name, column_default from information_schema.c
 console.log(r);
 '
 ```
+
 Expected: one row, `column_default` contains `'user'`.
 
 - [ ] **Step 8: Verify db suite + lint**
@@ -495,9 +503,11 @@ git commit -m "feat(db): add role column to users with default user"
 ## Task 4: `server.ts` — Better Auth instance + smoke test
 
 **Files:**
+
 - Create: `packages/auth/src/server.ts`, `packages/auth/src/server.test.ts`
 
 **Interfaces:**
+
 - Consumes: `authEnv` from `./env`; `db` from `@sipilian/db`; `users`, `sessions`, `accounts`, `verifications` from `@sipilian/db/schema`; `betterAuth`, `drizzleAdapter`, `expo`.
 - Produces: `auth` — the Better Auth server instance (exposes `auth.handler`, `auth.api`, `auth.$Infer`).
 
@@ -581,10 +591,12 @@ git commit -m "feat(auth): configure Better Auth server with drizzle adapter and
 ## Task 5: Integration test — signup/signin against Neon (+ neon-http fallback)
 
 **Files:**
+
 - Modify: `packages/auth/src/server.test.ts` (add integration block)
 - Conditional: `packages/auth/src/server.ts` (Pool fallback, only if the transaction error appears)
 
 **Interfaces:**
+
 - Consumes: `auth.api.signUpEmail`, `auth.api.signInEmail`; `db` + `users` + `eq` for cleanup.
 
 - [ ] **Step 1: Add the integration test** — append to `packages/auth/src/server.test.ts`
@@ -702,9 +714,11 @@ git commit -m "test(auth): add live signup/signin integration against Neon dev"
 ## Task 6: `client-web.ts` + `index.ts` barrel
 
 **Files:**
+
 - Create: `packages/auth/src/client-web.ts`, `packages/auth/src/index.ts`
 
 **Interfaces:**
+
 - Produces (subpath `@sipilian/auth/client-web`): `authClient` (cookie-session web client).
 - Produces (barrel `@sipilian/auth`): `auth`, `authEnv`, `ROLES`, `isAdmin`, `requireAdmin`, types `AuthError`, `AuthErrorCode`, `Role`, `RoleBearer`, `Session`, `AuthUser`.
 
@@ -758,6 +772,7 @@ git commit -m "feat(auth): add web auth client and package barrel exports"
 ## Task 7: CI secrets wiring + finalize
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml` (inject secrets into the `test` job)
 
 **Interfaces:** none (infra).
@@ -765,12 +780,12 @@ git commit -m "feat(auth): add web auth client and package barrel exports"
 - [ ] **Step 1: Add env to the `test` job** — in `.github/workflows/ci.yml`, under `test:` add a job-level `env` block right after `runs-on: ubuntu-latest`:
 
 ```yaml
-  test:
-    runs-on: ubuntu-latest
+test:
+  runs-on: ubuntu-latest
 
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
 ```
 
 - [ ] **Step 2: Validate the workflow YAML parses**
@@ -793,6 +808,7 @@ git commit -m "ci: provide DATABASE_URL and BETTER_AUTH_SECRET to the test job"
 - [ ] **Step 5: MANUAL — add GitHub Actions secrets** (cannot be automated here)
 
 In GitHub → repo **Settings → Secrets and variables → Actions → New repository secret**, add:
+
 - `DATABASE_URL` = the Neon dev connection string.
 - `BETTER_AUTH_SECRET` = a 32+ char secret (`openssl rand -base64 32`).
 
@@ -803,6 +819,7 @@ Without these, the CI `test` job's auth integration test will fail.
 ## Self-Review
 
 **1. Spec coverage** (design spec §-by-§):
+
 - §3/§4 server config → Task 4. §5 env → Task 1. §6 roles + Result → Task 2. §7 barrel/types → Task 6. §8 role column migration → Task 3. §9 testing (unit+integration) → Tasks 1,2,4,5. §10 CI secrets + .env.example → Tasks 1,7. §11 DoD → gates in every task. §12 client-expo deferred → not built here (documented). ✅ All covered.
 
 **2. Placeholder scan:** No TBD/TODO; every code step shows complete code; the conditional fallback (Task 5) is fully coded, not a placeholder. ✅
