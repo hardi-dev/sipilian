@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { isErr, isOk } from "./result";
-import { scoreObjectiveSubtest, scoreTkpSubtest } from "./scoring";
+import {
+  scoreObjectiveSubtest,
+  scoreTkpSubtest,
+  scoreTryout,
+  type SubtestScore,
+} from "./scoring";
 
 describe("scoreObjectiveSubtest", () => {
   it("awards 5 points per correct answer and marks a pass", () => {
@@ -59,5 +64,32 @@ describe("scoreTkpSubtest", () => {
     if (isErr(result)) {
       expect(result.error.code).toBe("invalid_tkp_weight");
     }
+  });
+});
+
+describe("scoreTryout", () => {
+  it("passes only when every subtest passes and totals the raw scores", () => {
+    const subtests: SubtestScore[] = [
+      { kind: "twk", rawScore: 100, passingGrade: 65, passed: true },
+      { kind: "tiu", rawScore: 90, passingGrade: 80, passed: true },
+      { kind: "tkp", rawScore: 160, passingGrade: 156, passed: true },
+    ];
+
+    const result = scoreTryout(subtests);
+
+    expect(result.totalScore).toBe(350);
+    expect(result.passedAll).toBe(true);
+  });
+
+  it("fails overall when any subtest is below its passing grade", () => {
+    const subtests: SubtestScore[] = [
+      { kind: "twk", rawScore: 60, passingGrade: 65, passed: false },
+      { kind: "tiu", rawScore: 90, passingGrade: 80, passed: true },
+      { kind: "tkp", rawScore: 160, passingGrade: 156, passed: true },
+    ];
+
+    const result = scoreTryout(subtests);
+
+    expect(result.passedAll).toBe(false);
   });
 });

@@ -89,3 +89,27 @@ export const scoreTkpSubtest = (
     passed: rawScore >= input.passingGrade,
   });
 };
+
+/**
+ * The aggregate result of a full CAT tryout across all subtests.
+ */
+export interface TryoutScore {
+  readonly subtests: readonly SubtestScore[];
+  readonly totalScore: number;
+  readonly passedAll: boolean;
+}
+
+/**
+ * Aggregates per-subtest scores into an overall tryout result.
+ * @param subtests - The already-scored subtests making up the tryout.
+ * @returns The combined total and whether every subtest passed.
+ */
+export const scoreTryout = (subtests: readonly SubtestScore[]): TryoutScore => {
+  const totalScore = subtests.reduce((sum, subtest) => sum + subtest.rawScore, 0);
+
+  return {
+    subtests,
+    totalScore,
+    passedAll: subtests.every((subtest) => subtest.passed),
+  };
+};
