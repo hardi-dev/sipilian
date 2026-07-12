@@ -291,6 +291,44 @@ Config final (mengintegrasikan seluruh keputusan di atas). Catatan penyesuaian d
 draft awal: `files` mencakup `**/*.tsx`, dan paket domain murni memakai
 `packages/core` (bukan `shared`).
 
+#### 9.7.1 Aturan spasi wajib — `padding-line-between-statements` (PENTING)
+
+Berbeda dari Prettier (yang mengatur format), rule ini mengatur **spasi semantik
+antar-statement** dan ditegakkan sebagai **error (blocking di CI)**. Semua
+auto-fixable via `eslint --fix`.
+
+Ketentuan:
+- Baris kosong **sesudah** blok `import`, sesudah direktif, dan sesudah deklarasi
+  `const/let/var` — kecuali antar-item sejenis berdampingan (import↔import,
+  deklarasi↔deklarasi) boleh rapat.
+- Baris kosong **sebelum** `return`.
+- Baris kosong **sebelum & sesudah** blok `if/for/while/switch/try/function/class`.
+
+Contoh:
+
+```ts
+// ❌ MELANGGAR
+import { z } from "zod";
+const schema = z.object({ id: z.string() });
+function scoreTwk(correct: number) {
+  const point = correct * 5;
+  return point;
+}
+
+// ✅ SESUAI
+import { z } from "zod";
+
+const schema = z.object({ id: z.string() });
+
+function scoreTwk(correct: number) {
+  const point = correct * 5;
+
+  return point;
+}
+```
+
+#### 9.7.2 Config (acuan)
+
 ```js
 export default tseslint.config(
   {
