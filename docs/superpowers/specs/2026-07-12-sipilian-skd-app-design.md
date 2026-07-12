@@ -416,6 +416,109 @@ function scoreTwk(correct: number) {
 > Aturan-aturan di §9 akan dituangkan juga ke `AGENTS.md` repo agar konsisten
 > dipatuhi oleh manusia maupun agen.
 
+### 9.8 Aturan spesifik per-modul
+
+Melengkapi aturan global (§9.1–9.7), tiap modul punya aturan tambahan pada tiga
+dimensi: **struktur & pola**, **penamaan & API**, dan **override ESLint**. Kolom
+"Penegakan" membedakan **lint** (machine-checked, blocking di CI) vs **konvensi**
+(didokumentasikan di `AGENTS.md`, ditegakkan lewat review).
+
+#### 9.8.1 `packages/core`
+
+- **Struktur & pola:** hanya fungsi murni (tanpa class untuk logika domain);
+  **deterministik** — `Date`, `Math.random`, timer **tidak boleh** dipakai di dalam
+  fungsi domain, waktu & keacakan **di-inject** sebagai parameter (mis. `updateStreak`
+  menerima `activityDate` dari server); satu tanggung jawab per file; `Result`
+  dikembalikan untuk error yang diharapkan — **tidak pernah `throw`** (throw hanya
+  untuk bug/invariant).
+- **Penamaan & API:** tipe error `<Domain>Error` + `<Domain>ErrorCode` (kode berupa
+  literal `snake_case`, pesan bahasa Inggris untuk developer); fungsi berupa verba
+  (`score*`, `calculate*`, `schedule*`, `update*`); interface input `<Fn>Input`,
+  hasil `<Noun>Score`/`<Noun>State`; **semua ekspor lewat `index.ts`** (barrel),
+  impor dalam (`@sipilian/core/src/...`) dilarang.
+- **Override ESLint:** pertahankan ban kemurnian `no-restricted-imports`
+  (`@sipilian/db`, `drizzle-orm`, `@neondatabase/serverless`, `react`,
+  `react-native`, `**/apps/**`); **tambah** `no-restricted-globals` untuk `Date`,
+  `Math.random`, `setTimeout`, `setInterval` di `packages/core/src/**` (kecuali
+  `*.test.ts`). **Penegakan: lint.**
+
+#### 9.8.2 `packages/db`
+
+- **Struktur & pola:** skema dipecah **per area domain** (`content.ts`, `tryout.ts`,
+  `progress.ts`, `monetization.ts`); **hanya `src/client.ts`** yang membuat koneksi
+  Neon/Drizzle — file lain memakai instance `db` bersama; query helper mengembalikan
+  data polos (tanpa HTTP/Zod/aturan bisnis); migrasi digenerate `drizzle-kit`,
+  di-commit ke `drizzle/`, **tidak diedit tangan**; tabel Better Auth tetap
+  didefinisikan di sini (satu sumber skema).
+- **Penamaan & API:** tabel `snake_case` **jamak**, kolom `snake_case`; tiap tabel
+  mengekspor tipe `typeof t.$inferSelect`/`$inferInsert` sebagai **sumber kebenaran
+  bentuk baris** (tanpa interface baris tulisan tangan); FK `<referenced_singular>_id`.
+- **Override ESLint:** pertahankan ban `react`/`react-native`/`**/apps/**` dan
+  `sonarjs/no-duplicate-string: off` di `src/schema/**`; **tambah** aturan agar
+  `@neondatabase/serverless` **hanya** boleh diimpor dari `src/client.ts`.
+  **Penegakan: lint.**
+
+#### 9.8.3 `packages/auth`
+
+- **Struktur & pola:** `src/server.ts` (instance & konfigurasi Better Auth server);
+  klien via **subpath export** — `@sipilian/auth/client-web` (cookie session) &
+  `@sipilian/auth/client-expo` (`@better-auth/expo`); `src/roles.ts` menampung
+  konstanta peran (`"admin"`, `"user"`); skema tabel auth tetap tinggal di
+  `packages/db`.
+- **Penamaan & API:** ekspor `auth` (server) & `authClient` (klien); tipe sesi
+  `Session`, user `AuthUser` (hindari bentrok dengan tipe baris `User` dari `db`);
+  env divalidasi Zod fail-fast lewat objek `authEnv`.
+- **Override ESLint:** `no-restricted-imports` melarang `**/apps/**`; file server
+  (`server.ts`) juga melarang `react`/`react-native`; `react-native` hanya sah di
+  file klien expo. **Penegakan: lint.**
+
+#### 9.8.4 `packages/api`
+
+- **Struktur & pola:** server functions dikelompokkan per fitur (`lessons`,
+  `tryouts`, `progress`, `content`, `entitlements`) dengan **`*.schema.ts` &
+  `*.handler.ts` berdampingan**; handler **tipis** (parse → delegasi ke `core`/`db`
+  → map `Err` ke HTTP), **tanpa logika domain**; satu `src/http.ts` memetakan kode
+  error domain → status+body.
+- **Penamaan & API:** fungsi berupa verba per fitur (`submitLesson`, `startTryout`,
+  `submitTryout`, `syncProgress`, `setEntitlement`); skema `<action>InputSchema`/
+  `<action>OutputSchema`, tipe infer `<Action>Input`/`<Action>Output`; mutasi
+  non-idempoten membawa `idempotencyKey` di skema input.
+- **Override ESLint:** `no-restricted-imports` melarang `**/apps/**` &
+  `react`/`react-native` (boleh `core`/`db`/`auth`). **Penegakan: lint.**
+- **Konvensi (AGENTS.md):** di `*.handler.ts` dilarang `throw` untuk error yang
+  diharapkan — kembalikan error HTTP hasil map dari `Result` (bug tak terduga tetap
+  naik ke handler terpusat). **Penegakan: konvensi.**
+
+#### 9.8.5 `apps/web` (admin + host API)
+
+- **Struktur & pola:** `app/routes/**` (layar admin), `app/server/**` (wiring tipis
+  server functions dari `api`, tanpa logika domain), `app/features/<area>/{components,
+  hooks}` (mirror pembagian fitur `api`), `app/shared/**`; **route-guard peran
+  `admin` di layout** (bukan per-halaman); import CSV divalidasi & di-commit di sisi
+  server.
+- **Penamaan & API:** file `kebab-case`, identifier komponen `PascalCase`; hook
+  `use*` membungkus TanStack Query — **komponen tidak memanggil server function
+  langsung**, selalu lewat hook.
+- **Override ESLint:** aktifkan `eslint-plugin-react` + `react-hooks` +
+  `jsx-a11y` khusus `apps/web/**`; `no-restricted-imports` melarang impor
+  `packages/db` langsung (harus lewat `api`). **Penegakan: lint.**
+
+#### 9.8.6 `apps/mobile` (Expo)
+
+- **Struktur & pola:** `src/features/<name>/{components,hooks,api,screens}` (`learn`,
+  `review`, `tryout`, `profile`, `paywall`) + `src/shared/**`; **state split** —
+  server-state via **TanStack Query**, UI lokal via **Zustand**; buffer jawaban
+  offline tinggal di `features/<x>/api` (bukan komponen).
+- **Penamaan & API:** file `kebab-case`, komponen `PascalCase`, hook `use*`, store
+  `use<Name>Store`, layar `<Name>Screen`; styling via **NativeWind `className`**;
+  query keys tersentralisasi per fitur.
+- **Override ESLint:** aktifkan `eslint-plugin-react` + `react-hooks` +
+  `eslint-plugin-react-native` khusus `apps/mobile/**`; `no-restricted-imports`
+  melarang `packages/db`; **larang named import `StyleSheet` dari `react-native`**
+  (NativeWind-only). **Penegakan: lint.**
+- **Konvensi (AGENTS.md):** data server tidak pernah masuk Zustand; **tanpa logika
+  bisnis di store** (skoring/XP dari `core` via `api`). **Penegakan: konvensi.**
+
 ---
 
 ## 10. Penanganan Error, Offline & Pengujian
