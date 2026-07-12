@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { isErr, isOk } from "./result";
-import { scoreObjectiveSubtest } from "./scoring";
+import { scoreObjectiveSubtest, scoreTkpSubtest } from "./scoring";
 
 describe("scoreObjectiveSubtest", () => {
   it("awards 5 points per correct answer and marks a pass", () => {
@@ -34,6 +34,30 @@ describe("scoreObjectiveSubtest", () => {
 
     if (isErr(result)) {
       expect(result.error.code).toBe("negative_correct_count");
+    }
+  });
+});
+
+describe("scoreTkpSubtest", () => {
+  it("sums the selected option weights (no wrong answers)", () => {
+    const result = scoreTkpSubtest({ selectedWeights: [5, 4, 3, 5, 2], passingGrade: 15 });
+
+    expect(isOk(result)).toBe(true);
+
+    if (isOk(result)) {
+      expect(result.value.rawScore).toBe(19);
+      expect(result.value.kind).toBe("tkp");
+      expect(result.value.passed).toBe(true);
+    }
+  });
+
+  it("rejects a weight outside the 1..5 range", () => {
+    const result = scoreTkpSubtest({ selectedWeights: [5, 6], passingGrade: 10 });
+
+    expect(isErr(result)).toBe(true);
+
+    if (isErr(result)) {
+      expect(result.error.code).toBe("invalid_tkp_weight");
     }
   });
 });

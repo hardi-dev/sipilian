@@ -57,3 +57,35 @@ export const scoreObjectiveSubtest = (
     passed: rawScore >= input.passingGrade,
   });
 };
+
+/**
+ * Inputs for scoring a TKP subtest where every selected option carries a 1..5 weight.
+ */
+export interface TkpScoreInput {
+  readonly selectedWeights: readonly number[];
+  readonly passingGrade: number;
+}
+
+/**
+ * Scores a TKP subtest by summing option weights; there are no wrong answers.
+ * @param input - The selected option weights and the passing grade.
+ * @returns Ok with the subtest score, or Err when any weight is outside 1..5.
+ */
+export const scoreTkpSubtest = (
+  input: TkpScoreInput,
+): Result<SubtestScore, ScoringError> => {
+  const hasInvalidWeight = input.selectedWeights.some((weight) => weight < 1 || weight > 5);
+
+  if (hasInvalidWeight) {
+    return err({ code: "invalid_tkp_weight", message: "TKP weights must be within 1..5" });
+  }
+
+  const rawScore = input.selectedWeights.reduce((sum, weight) => sum + weight, 0);
+
+  return ok({
+    kind: "tkp",
+    rawScore,
+    passingGrade: input.passingGrade,
+    passed: rawScore >= input.passingGrade,
+  });
+};
