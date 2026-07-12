@@ -13,10 +13,7 @@ export default tseslint.config(
   js.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
-    extends: [
-      ...tseslint.configs.strictTypeChecked,
-      ...tseslint.configs.stylisticTypeChecked,
-    ],
+    extends: [...tseslint.configs.strictTypeChecked, ...tseslint.configs.stylisticTypeChecked],
     plugins: {
       "@stylistic": stylistic,
       "simple-import-sort": simpleImportSort,
@@ -25,7 +22,9 @@ export default tseslint.config(
     },
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ["packages/*/vitest.config.ts", "eslint.config.js"],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -166,7 +165,8 @@ export default tseslint.config(
         },
         {
           selector: "NewExpression[callee.name='Date'][arguments.length=0]",
-          message: "core must be deterministic: pass time in; don't call new Date() for the current time.",
+          message:
+            "core must be deterministic: pass time in; don't call new Date() for the current time.",
         },
       ],
     },
@@ -213,7 +213,22 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/*.test.ts", "**/vitest.config.ts"],
+    files: ["**/vitest.config.ts"],
+    rules: {
+      "jsdoc/require-jsdoc": "off",
+      "max-lines": "off",
+      "max-lines-per-function": "off",
+      "sonarjs/no-duplicate-string": "off",
+      "no-restricted-properties": "off",
+      "no-restricted-globals": "off",
+      "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-useless-default-assignment": "off",
+      "@typescript-eslint/prefer-nullish-coalescing": "off",
+    },
+  },
+  {
+    files: ["**/*.test.ts"],
     rules: {
       "@typescript-eslint/no-non-null-assertion": "off",
       "jsdoc/require-jsdoc": "off",

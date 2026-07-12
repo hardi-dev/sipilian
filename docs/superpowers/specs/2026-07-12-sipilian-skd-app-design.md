@@ -17,9 +17,11 @@ Tujuan proyek: **produk serius untuk diluncurkan** — fondasi dirancang agar bi
 tumbuh, namun eksekusi dimulai dari MVP yang fokus.
 
 ### Pengalaman inti
+
 Kombinasi **jalur belajar bite-sized** (ala Duolingo) + **simulasi tryout CAT**.
 
 ### Strategi build: Walking Skeleton (irisan vertikal tipis)
+
 Bangun seluruh rantai teknologi sejak awal (mobile ↔ API ↔ DB ↔ admin ↔ auth ↔
 monetisasi) dengan konten yang cukup untuk menghidupkan **ketiga subtes SKD
 (TWK/TIU/TKP) end-to-end**. Setelah kerangka tervalidasi, perbanyak volume konten
@@ -32,24 +34,24 @@ semua sistem tersambung dan tervalidasi.
 
 ## 2. Keputusan Kunci (ringkas)
 
-| Aspek | Keputusan |
-|---|---|
-| Tujuan | Produk serius untuk diluncurkan |
-| Segmen MVP | CPNS / SKD (TWK, TIU, TKP) |
-| Inti produk | Jalur belajar bite-sized + tryout CAT |
-| Mobile | React Native (Expo) |
-| Admin & API | TanStack Start |
-| Database | Neon (serverless Postgres) |
-| ORM | Drizzle |
-| Auth | Better Auth (mobile via `@better-auth/expo`, admin via cookie session) |
-| Sumber konten | Kurasi/tulis sendiri, model kisi-kisi resmi BKN, + import CSV |
-| Monetisasi | Freemium + Iklan + Premium |
-| Lint/Format | ESLint (flat config) + Prettier |
-| Aturan kualitas | SonarJS via `eslint-plugin-sonarjs` (bukan platform Sonar) |
-| Styling mobile | NativeWind (Tailwind) |
-| Error handling | `Result` di `core`, diterjemahkan ke HTTP di batas API |
-| State mobile | TanStack Query (server-state) + Zustand (UI lokal) |
-| Testing | Vitest, colocated, TDD untuk `packages/core` |
+| Aspek           | Keputusan                                                              |
+| --------------- | ---------------------------------------------------------------------- |
+| Tujuan          | Produk serius untuk diluncurkan                                        |
+| Segmen MVP      | CPNS / SKD (TWK, TIU, TKP)                                             |
+| Inti produk     | Jalur belajar bite-sized + tryout CAT                                  |
+| Mobile          | React Native (Expo)                                                    |
+| Admin & API     | TanStack Start                                                         |
+| Database        | Neon (serverless Postgres)                                             |
+| ORM             | Drizzle                                                                |
+| Auth            | Better Auth (mobile via `@better-auth/expo`, admin via cookie session) |
+| Sumber konten   | Kurasi/tulis sendiri, model kisi-kisi resmi BKN, + import CSV          |
+| Monetisasi      | Freemium + Iklan + Premium                                             |
+| Lint/Format     | ESLint (flat config) + Prettier                                        |
+| Aturan kualitas | SonarJS via `eslint-plugin-sonarjs` (bukan platform Sonar)             |
+| Styling mobile  | NativeWind (Tailwind)                                                  |
+| Error handling  | `Result` di `core`, diterjemahkan ke HTTP di batas API                 |
+| State mobile    | TanStack Query (server-state) + Zustand (UI lokal)                     |
+| Testing         | Vitest, colocated, TDD untuk `packages/core`                           |
 
 ---
 
@@ -73,6 +75,7 @@ sipilian/
 ```
 
 ### Alur data
+
 - **Mobile (Expo)** memanggil **RPC server functions** yang di-host TanStack Start
   → **Drizzle** → **Neon Postgres**.
 - **Better Auth** menangani sesi dua klien: mobile (token di SecureStore) & admin
@@ -83,6 +86,7 @@ sipilian/
   (**update konten tanpa rilis ulang app**).
 
 ### Prinsip pemisahan (dependency direction)
+
 - `core` tidak boleh impor `db`/`api`/`apps/**`/`react`/`react-native`.
 - `api` boleh pakai `core` + `db`; menangani HTTP tapi mendelegasikan aturan ke `core`.
 - `db` hanya skema & query (boleh pakai `core` untuk tipe, tidak boleh UI/apps).
@@ -96,6 +100,7 @@ Better Auth otomatis membuat tabel `user`, `session`, `account`, `verification`.
 Berikut tabel domain (nama tabel `snake_case` jamak).
 
 ### A. Konten (dikelola admin)
+
 - `subtests` — TWK, TIU, TKP. Metadata: nama, bobot, passing grade (ambang batas).
 - `topics` — sub-materi dalam subtes (mis. TWK→"Nasionalisme"; TIU→"Silogisme").
   FK `subtest_id`.
@@ -107,6 +112,7 @@ Berikut tabel domain (nama tabel `snake_case` jamak).
 - `lesson_questions` — relasi soal ↔ lesson.
 
 ### B. Tryout CAT
+
 - `tryout_packages` — paket ujian (mis. "Tryout SKD #1"), durasi, komposisi
   (35 TWK / 30 TIU / 45 TKP = 110 soal), tanda free/premium.
 - `tryout_package_questions` — soal penyusun paket + urutan.
@@ -115,6 +121,7 @@ Berikut tabel domain (nama tabel `snake_case` jamak).
 - `tryout_answers` — jawaban per soal dalam attempt (untuk pembahasan & analitik).
 
 ### C. Progres belajar & gamifikasi
+
 - `lesson_completions` — lesson yang sudah diselesaikan user + skornya.
 - `user_question_states` — spaced repetition: per (user, soal) simpan review
   terakhir, jadwal review berikutnya, tingkat penguasaan.
@@ -123,11 +130,13 @@ Berikut tabel domain (nama tabel `snake_case` jamak).
 - `daily_activity` — catatan aktivitas harian (kalender streak & anti-cheat streak).
 
 ### D. Monetisasi
+
 - `entitlements` — status Premium user (`user_id`, `plan`, `expires_at`). Untuk MVP
   di-set manual/dev; integrasi billing (Google Play / App Store) menyusul, model
   sudah siap.
 
 ### Aturan skoring penting
+
 - **TWK/TIU:** benar = 5, salah = 0.
 - **TKP:** berbobot **1–5** (tercermin di `question_options.weight`), tidak ada
   jawaban "salah".
@@ -140,6 +149,7 @@ Berikut tabel domain (nama tabel `snake_case` jamak).
 Seluruh logika hidup di `packages/core` (fungsi murni, teruji ketat via TDD).
 
 ### 5.1 Loop belajar harian (jalur bite-sized)
+
 - Home = **jalur belajar** per subtes (peta unit → lesson ala Duolingo); lesson
   terkunci sampai prasyarat beres.
 - 1 lesson = 5–10 soal, feedback benar/salah + pembahasan tiap soal.
@@ -149,12 +159,14 @@ Seluruh logika hidup di `packages/core` (fungsi murni, teruji ketat via TDD).
   = nyawa tak terbatas. (Titik freemium/iklan pertama.)
 
 ### 5.2 Spaced repetition (retensi)
+
 - Setelah soal dikerjakan, `core` menghitung jadwal review berikutnya (algoritma
   ringan ala SM-2 disederhanakan), disimpan di `user_question_states`.
 - Sesi **"Latihan/Review"** mengumpulkan soal yang jatuh tempo — pendorong retensi
   jangka panjang (cocok untuk hafalan TWK).
 
 ### 5.3 Loop tryout CAT
+
 - Pilih paket → **ujian bertimer** (durasi & komposisi sesuai aturan SKD: 110 soal).
 - Skoring `core`: TWK/TIU benar=5/salah=0; **TKP berbobot 1–5**; bandingkan dengan
   passing grade per subtes → lulus/tidak.
@@ -162,10 +174,12 @@ Seluruh logika hidup di `packages/core` (fungsi murni, teruji ketat via TDD).
   fitur Premium; gratis dapat sebagian).
 
 ### 5.4 Gamifikasi
+
 XP, streak (harian + terpanjang), kalender aktivitas. **Liga/leaderboard & fitur
 sosial DILUAR MVP** (roadmap).
 
 ### 5.5 Titik monetisasi MVP
+
 - **Iklan (gratis):** interstitial setelah sejumlah lesson + rewarded ad untuk isi
   ulang nyawa.
 - **Premium:** nyawa tak terbatas, semua paket tryout, pembahasan lengkap, tanpa
@@ -203,6 +217,7 @@ sosial DILUAR MVP** (roadmap).
 ## 8. Batas Lingkup MVP
 
 ### Masuk MVP
+
 - Auth (daftar/masuk) mobile + admin — Better Auth.
 - Jalur belajar **TWK, TIU, TKP** (ketiganya): unit & lesson, feedback +
   pembahasan, XP, streak, nyawa.
@@ -214,6 +229,7 @@ sosial DILUAR MVP** (roadmap).
 - Sinkronisasi progres ke server + ketahanan offline dasar.
 
 ### Diluar MVP (roadmap)
+
 - Liga/leaderboard, teman/sosial.
 - Segmen lain (TNI/Polri, BUMN).
 - Billing asli Google Play / App Store (model data sudah siap).
@@ -226,6 +242,7 @@ sosial DILUAR MVP** (roadmap).
 ## 9. Coding Rules & Standar Kualitas
 
 ### 9.1 Prinsip umum
+
 - **TypeScript `strict: true`** di semua paket; hindari `any` (pakai `unknown` +
   narrowing).
 - **Arah dependensi dipaksakan** (lihat §3) via `no-restricted-imports`.
@@ -245,6 +262,7 @@ sosial DILUAR MVP** (roadmap).
 - **Commit:** Conventional Commits; kerja di branch, tidak langsung ke `main`.
 
 ### 9.2 Penamaan
+
 - File `kebab-case`; komponen React `PascalCase`; variabel/fungsi `camelCase`;
   konstanta `UPPER_CASE`; tabel DB `snake_case` jamak.
 - Key `snake_case` **hanya** lewat objek literal (Zod `z.object({...})`) & tipe
@@ -252,26 +270,29 @@ sosial DILUAR MVP** (roadmap).
   (`typeProperty` **tidak** dilonggarkan).
 
 ### 9.3 Error handling
+
 - `packages/core` mengembalikan **`Result<Ok | Err>`** untuk error yang diharapkan
   (tanpa throw).
 - Batas API menerjemahkan `Err` ke respons HTTP; error tak terduga (bug) dilempar &
   ditangkap handler terpusat.
 
 ### 9.4 Batas ukuran & kompleksitas (berlaku `.ts` DAN `.tsx`, tanpa kecuali)
-| Aturan | Nilai |
-|---|---|
-| `max-lines` (file) | 300 (skip blank & comment) |
-| `max-lines-per-function` | **20** (skip blank & comment; termasuk komponen React) |
-| `max-params` | 4 (lebih → objek opsi) |
-| `max-depth` | 3 |
-| `max-nested-callbacks` | 3 |
-| `complexity` (cyclomatic) | 10 |
-| `sonarjs/cognitive-complexity` | 10 |
+
+| Aturan                         | Nilai                                                  |
+| ------------------------------ | ------------------------------------------------------ |
+| `max-lines` (file)             | 300 (skip blank & comment)                             |
+| `max-lines-per-function`       | **20** (skip blank & comment; termasuk komponen React) |
+| `max-params`                   | 4 (lebih → objek opsi)                                 |
+| `max-depth`                    | 3                                                      |
+| `max-nested-callbacks`         | 3                                                      |
+| `complexity` (cyclomatic)      | 10                                                     |
+| `sonarjs/cognitive-complexity` | 10                                                     |
 
 > Konsekuensi sadar: komponen React akan **didekomposisi agresif** jadi
 > sub-komponen kecil agar patuh batas 20 baris/fungsi.
 
 ### 9.5 SonarJS (via `eslint-plugin-sonarjs`, bukan platform Sonar)
+
 - Aktifkan `sonarjs.configs.recommended` level **error** (blocking di CI).
 - `sonarjs/cognitive-complexity`: **10**.
 - `sonarjs/no-duplicate-string`: **threshold 3** (default), **dimatikan** di
@@ -282,11 +303,13 @@ sosial DILUAR MVP** (roadmap).
   `@typescript-eslint/no-non-null-assertion`.
 
 ### 9.6 Definition of Done (per task)
+
 Semua harus hijau: **test lulus** · **lint bersih (termasuk SonarJS & batas
 ukuran)** · **typecheck lolos** · **coverage kode baru ≥ 80%**. Gate ini
 **blocking** di CI sejak commit pertama.
 
 ### 9.7 ESLint flat config (acuan)
+
 Config final (mengintegrasikan seluruh keputusan di atas). Catatan penyesuaian dari
 draft awal: `files` mencakup `**/*.tsx`, dan paket domain murni memakai
 `packages/core` (bukan `shared`).
@@ -295,46 +318,46 @@ draft awal: `files` mencakup `**/*.tsx`, dan paket domain murni memakai
 
 **Blok global**
 
-| Item | Nilai | Arti |
-|---|---|---|
-| `ignores` | `dist`, `drizzle`, `.turbo`, `node_modules` | Folder ini tidak di-lint sama sekali |
-| `js.configs.recommended` | — | Aturan dasar ESLint untuk JS berlaku di semua file |
-| `prettier` (paling akhir) | — | Mematikan aturan ESLint yang bentrok dengan format Prettier |
+| Item                      | Nilai                                       | Arti                                                        |
+| ------------------------- | ------------------------------------------- | ----------------------------------------------------------- |
+| `ignores`                 | `dist`, `drizzle`, `.turbo`, `node_modules` | Folder ini tidak di-lint sama sekali                        |
+| `js.configs.recommended`  | —                                           | Aturan dasar ESLint untuk JS berlaku di semua file          |
+| `prettier` (paling akhir) | —                                           | Mematikan aturan ESLint yang bentrok dengan format Prettier |
 
 **Blok utama — `files: ["**/*.ts", "**/*.tsx"]`** (berlaku ke `.ts` DAN `.tsx`)
 
 Setup:
 
-| Item | Arti |
-|---|---|
-| `extends: strictTypeChecked` | Aturan TS paling ketat + berbasis analisis tipe |
-| `extends: stylisticTypeChecked` | Aturan gaya penulisan TS berbasis tipe |
-| `plugins` | Mengaktifkan `@stylistic`, `simple-import-sort`, `jsdoc`, `sonarjs` |
-| `projectService: true` | Memakai TypeScript project service untuk aturan type-aware |
+| Item                            | Arti                                                                |
+| ------------------------------- | ------------------------------------------------------------------- |
+| `extends: strictTypeChecked`    | Aturan TS paling ketat + berbasis analisis tipe                     |
+| `extends: stylisticTypeChecked` | Aturan gaya penulisan TS berbasis tipe                              |
+| `plugins`                       | Mengaktifkan `@stylistic`, `simple-import-sort`, `jsdoc`, `sonarjs` |
+| `projectService: true`          | Memakai TypeScript project service untuk aturan type-aware          |
 
 Aturan inti:
 
-| Rule | Setelan | Arti |
-|---|---|---|
-| `sonarjs/*` (recommended) | error | Seluruh preset SonarJS aktif sebagai error |
-| `sonarjs/cognitive-complexity` | `10` | Fungsi dengan kompleksitas kognitif > 10 ditolak |
-| `simple-import-sort/imports` | error | Urutan `import` wajib rapi (auto-fix) |
-| `simple-import-sort/exports` | error | Urutan `export` wajib rapi (auto-fix) |
-| `no-restricted-syntax` #1 | error | Larang tipe objek inline — `x: { a: number }` harus jadi `interface`/`type` bernama |
-| `no-restricted-syntax` #2 | error | Larang union literal inline pada anotasi — `x: "a" \| "b"` harus jadi `type` bernama |
+| Rule                           | Setelan | Arti                                                                                 |
+| ------------------------------ | ------- | ------------------------------------------------------------------------------------ |
+| `sonarjs/*` (recommended)      | error   | Seluruh preset SonarJS aktif sebagai error                                           |
+| `sonarjs/cognitive-complexity` | `10`    | Fungsi dengan kompleksitas kognitif > 10 ditolak                                     |
+| `simple-import-sort/imports`   | error   | Urutan `import` wajib rapi (auto-fix)                                                |
+| `simple-import-sort/exports`   | error   | Urutan `export` wajib rapi (auto-fix)                                                |
+| `no-restricted-syntax` #1      | error   | Larang tipe objek inline — `x: { a: number }` harus jadi `interface`/`type` bernama  |
+| `no-restricted-syntax` #2      | error   | Larang union literal inline pada anotasi — `x: "a" \| "b"` harus jadi `type` bernama |
 
 Naming convention (`@typescript-eslint/naming-convention`):
 
-| Target | Format wajib |
-|---|---|
-| `default` | `camelCase` |
-| `variable` | `camelCase` atau `UPPER_CASE` |
-| `parameter` | `camelCase` (boleh diawali `_`) |
-| `typeLike` (type/interface/class/enum) | `PascalCase` |
-| `enumMember` | `PascalCase` atau `UPPER_CASE` |
-| `variable` const + exported | `camelCase`, `PascalCase`, atau `UPPER_CASE` |
-| `objectLiteralProperty` | bebas (null) — supaya key `snake_case` payload API/DB boleh |
-| `import` | `camelCase` atau `PascalCase` |
+| Target                                 | Format wajib                                                |
+| -------------------------------------- | ----------------------------------------------------------- |
+| `default`                              | `camelCase`                                                 |
+| `variable`                             | `camelCase` atau `UPPER_CASE`                               |
+| `parameter`                            | `camelCase` (boleh diawali `_`)                             |
+| `typeLike` (type/interface/class/enum) | `PascalCase`                                                |
+| `enumMember`                           | `PascalCase` atau `UPPER_CASE`                              |
+| `variable` const + exported            | `camelCase`, `PascalCase`, atau `UPPER_CASE`                |
+| `objectLiteralProperty`                | bebas (null) — supaya key `snake_case` payload API/DB boleh |
+| `import`                               | `camelCase` atau `PascalCase`                               |
 
 > Catatan: `typeProperty` sengaja **tidak** dilonggarkan → interface/type tulisan
 > tangan tetap `camelCase`; `snake_case` hanya lewat objek literal (Zod) & tipe
@@ -342,40 +365,40 @@ Naming convention (`@typescript-eslint/naming-convention`):
 
 Batas ukuran & kompleksitas:
 
-| Rule | Setelan | Arti |
-|---|---|---|
-| `max-lines` | `300`, skip kosong & komentar | Maks 300 baris kode per file |
+| Rule                     | Setelan                                   | Arti                                                              |
+| ------------------------ | ----------------------------------------- | ----------------------------------------------------------------- |
+| `max-lines`              | `300`, skip kosong & komentar             | Maks 300 baris kode per file                                      |
 | `max-lines-per-function` | `20`, skip kosong/komentar, `IIFEs: true` | Maks 20 baris per fungsi (termasuk komponen React, tanpa kecuali) |
-| `max-params` | `4` | Lebih dari 4 argumen → pakai objek opsi |
-| `max-depth` | `3` | Maks 3 tingkat nesting blok |
-| `max-nested-callbacks` | `3` | Maks 3 callback bersarang |
-| `complexity` | `10` | Cyclomatic complexity maks 10 (pelengkap cognitive) |
+| `max-params`             | `4`                                       | Lebih dari 4 argumen → pakai objek opsi                           |
+| `max-depth`              | `3`                                       | Maks 3 tingkat nesting blok                                       |
+| `max-nested-callbacks`   | `3`                                       | Maks 3 callback bersarang                                         |
+| `complexity`             | `10`                                      | Cyclomatic complexity maks 10 (pelengkap cognitive)               |
 
 JSDoc:
 
-| Rule | Setelan | Arti |
-|---|---|---|
-| `jsdoc/require-jsdoc` | FunctionDeclaration, MethodDefinition, named arrow; `publicOnly: false` | JSDoc wajib di semua fungsi/metode/named arrow (bukan hanya publik) |
-| `jsdoc/no-types` | error | Dilarang menulis tipe di dalam JSDoc (tipe dari TS) |
-| `jsdoc/check-alignment` | error | Perataan blok `/** */` harus rapi |
-| `jsdoc/check-param-names` | error | Nama `@param` harus cocok parameter asli |
-| `jsdoc/check-tag-names` (`typed: true`) | error | Hanya tag valid; mode TS |
-| `jsdoc/require-description` | error | Wajib ada deskripsi |
-| `jsdoc/require-param` | error | Wajib `@param` untuk tiap parameter |
-| `jsdoc/require-param-description` | error | Tiap `@param` wajib deskripsi |
-| `jsdoc/require-returns` | error | Wajib `@returns` |
-| `jsdoc/require-returns-description` | error | `@returns` wajib deskripsi |
-| `jsdoc/require-param-type` | off | Tidak wajib tipe di `@param` (karena TS) |
-| `jsdoc/require-returns-type` | off | Tidak wajib tipe di `@returns` (karena TS) |
+| Rule                                    | Setelan                                                                 | Arti                                                                |
+| --------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `jsdoc/require-jsdoc`                   | FunctionDeclaration, MethodDefinition, named arrow; `publicOnly: false` | JSDoc wajib di semua fungsi/metode/named arrow (bukan hanya publik) |
+| `jsdoc/no-types`                        | error                                                                   | Dilarang menulis tipe di dalam JSDoc (tipe dari TS)                 |
+| `jsdoc/check-alignment`                 | error                                                                   | Perataan blok `/** */` harus rapi                                   |
+| `jsdoc/check-param-names`               | error                                                                   | Nama `@param` harus cocok parameter asli                            |
+| `jsdoc/check-tag-names` (`typed: true`) | error                                                                   | Hanya tag valid; mode TS                                            |
+| `jsdoc/require-description`             | error                                                                   | Wajib ada deskripsi                                                 |
+| `jsdoc/require-param`                   | error                                                                   | Wajib `@param` untuk tiap parameter                                 |
+| `jsdoc/require-param-description`       | error                                                                   | Tiap `@param` wajib deskripsi                                       |
+| `jsdoc/require-returns`                 | error                                                                   | Wajib `@returns`                                                    |
+| `jsdoc/require-returns-description`     | error                                                                   | `@returns` wajib deskripsi                                          |
+| `jsdoc/require-param-type`              | off                                                                     | Tidak wajib tipe di `@param` (karena TS)                            |
+| `jsdoc/require-returns-type`            | off                                                                     | Tidak wajib tipe di `@returns` (karena TS)                          |
 
 **Blok override per-paket**
 
-| Blok (`files`) | Aturan | Arti |
-|---|---|---|
-| `packages/core/**/*.ts` | `no-restricted-imports` | `core` harus murni: dilarang impor `@sipilian/db`, `drizzle-orm`, `@neondatabase/serverless` (bebas DB), `react`, `react-native` (bebas UI), dan `**/apps/**` |
-| `packages/db/**/*.ts` | `no-restricted-imports` | `db` layer data: dilarang impor `react`, `react-native`, dan `**/apps/**` (boleh pakai `core`) |
-| `packages/db/src/schema/**/*.ts` | `sonarjs/no-duplicate-string: off` | Skema Drizzle wajar mengulang literal (mis. `"cascade"`) |
-| `**/*.test.ts`, `**/vitest.config.ts` | beberapa off | Dilonggarkan: `no-non-null-assertion`, `require-jsdoc`, `max-lines`, `max-lines-per-function`, `sonarjs/no-duplicate-string` |
+| Blok (`files`)                        | Aturan                             | Arti                                                                                                                                                          |
+| ------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core/**/*.ts`               | `no-restricted-imports`            | `core` harus murni: dilarang impor `@sipilian/db`, `drizzle-orm`, `@neondatabase/serverless` (bebas DB), `react`, `react-native` (bebas UI), dan `**/apps/**` |
+| `packages/db/**/*.ts`                 | `no-restricted-imports`            | `db` layer data: dilarang impor `react`, `react-native`, dan `**/apps/**` (boleh pakai `core`)                                                                |
+| `packages/db/src/schema/**/*.ts`      | `sonarjs/no-duplicate-string: off` | Skema Drizzle wajar mengulang literal (mis. `"cascade"`)                                                                                                      |
+| `**/*.test.ts`, `**/vitest.config.ts` | beberapa off                       | Dilonggarkan: `no-non-null-assertion`, `require-jsdoc`, `max-lines`, `max-lines-per-function`, `sonarjs/no-duplicate-string`                                  |
 
 #### 9.7.2 Aturan spasi wajib — `padding-line-between-statements` (PENTING)
 
@@ -384,6 +407,7 @@ antar-statement** dan ditegakkan sebagai **error (blocking di CI)**. Semua
 auto-fixable via `eslint --fix`.
 
 Ketentuan:
+
 - Baris kosong **sesudah** blok `import`, sesudah direktif, dan sesudah deklarasi
   `const/let/var` — kecuali antar-item sejenis berdampingan (import↔import,
   deklarasi↔deklarasi) boleh rapat.
@@ -496,7 +520,7 @@ dimensi: **struktur & pola**, **penamaan & API**, dan **override ESLint**. Kolom
 
 - **Struktur & pola:** `app/routes/**` (layar admin), `app/server/**` (wiring tipis
   server functions dari `api`, tanpa logika domain), `app/features/<area>/{components,
-  hooks}` (mirror pembagian fitur `api`), `app/shared/**`; **route-guard peran
+hooks}` (mirror pembagian fitur `api`), `app/shared/**`; **route-guard peran
   `admin` di layout** (bukan per-halaman); import CSV divalidasi & di-commit di sisi
   server.
 - **Penamaan & API:** file `kebab-case`, identifier komponen `PascalCase`; hook
@@ -527,6 +551,7 @@ dimensi: **struktur & pola**, **penamaan & API**, dan **override ESLint**. Kolom
 ## 10. Penanganan Error, Offline & Pengujian
 
 ### 10.1 Error & kasus tepi
+
 - **Timer tryout** = sumber kebenaran di server (waktu mulai tersimpan); jika app
   tertutup/ganti jaringan, sisa waktu dihitung ulang dari server — anti-curang &
   tahan gangguan.
@@ -539,10 +564,12 @@ dimensi: **struktur & pola**, **penamaan & API**, dan **override ESLint**. Kolom
   (`daily_activity`), bukan jam perangkat.
 
 ### 10.2 Offline dasar (MVP)
+
 Lesson berjalan & progres tahan putus koneksi; konten di-cache ringan. Offline penuh
 (unduh paket) = pasca-MVP.
 
 ### 10.3 Strategi pengujian
+
 - **Unit test `packages/core` (TDD wajib):** skoring CAT (termasuk bobot TKP &
   passing grade), algoritma spaced-repetition, kalkulasi XP/streak. Area paling
   rawan, diuji paling ketat, terisolasi tanpa DB/jaringan.
@@ -553,6 +580,7 @@ Lesson berjalan & progres tahan putus koneksi; konten di-cache ringan. Offline p
 ---
 
 ## 11. Roadmap Pasca-MVP (ringkas)
+
 1. Perbanyak volume soal SKD & analitik pengguna.
 2. Notifikasi push (pengingat streak) — kandidat fast-follow.
 3. Liga/leaderboard & fitur sosial.

@@ -62,11 +62,13 @@ git checkout -b feat/foundation-and-core
 ## Task 1: Root workspace scaffold
 
 **Files:**
+
 - Create: `pnpm-workspace.yaml`
 - Create: `package.json`
 - Create: `turbo.json`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: pnpm workspace resolving `apps/*` and `packages/*`; root scripts `lint`, `typecheck`, `test`, `format`, `format:check`; Turbo tasks `lint`/`typecheck`/`test`.
 
@@ -141,9 +143,11 @@ git commit -m "chore: scaffold pnpm + turborepo workspace"
 ## Task 2: Shared strict TypeScript base config
 
 **Files:**
+
 - Create: `tsconfig.base.json`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `tsconfig.base.json` that per-package `tsconfig.json` files extend.
 
@@ -194,11 +198,13 @@ git commit -m "chore: add shared strict tsconfig base"
 ## Task 3: `packages/core` package scaffold
 
 **Files:**
+
 - Create: `packages/core/package.json`
 - Create: `packages/core/tsconfig.json`
 - Create: `packages/core/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: `tsconfig.base.json` (Task 2).
 - Produces: `@sipilian/core` package with a `typecheck` script; a lint-compliant `src/index.ts` so later tooling has real TS to check.
 
@@ -261,10 +267,12 @@ git commit -m "chore: scaffold @sipilian/core package"
 ## Task 4: Prettier
 
 **Files:**
+
 - Create: `.prettierrc.json`
 - Create: `.prettierignore`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: repo-wide formatting via `pnpm format` / `pnpm format:check`.
 
@@ -311,21 +319,25 @@ git commit -m "chore: add prettier config"
 ## Task 5: ESLint flat config enforcing all §9 rules
 
 **Files:**
+
 - Create: `eslint.config.js`
 
 **Interfaces:**
+
 - Consumes: `packages/core/src/index.ts` (Task 3) as the file to lint; `tsconfig.base.json` (Task 2) via `projectService`.
 - Produces: `pnpm lint` enforcing strict TS, SonarJS, size/complexity caps, JSDoc, import sort, naming, padding lines, and per-package `no-restricted-imports`.
 
 - [ ] **Step 1: Install ESLint and all plugins**
 
 Run:
+
 ```bash
 pnpm add -D -w eslint@^9.18.0 @eslint/js@^9.18.0 typescript-eslint@^8.20.0 \
   @stylistic/eslint-plugin@^2.13.0 eslint-plugin-simple-import-sort@^12.1.0 \
   eslint-plugin-jsdoc@^50.6.0 eslint-plugin-sonarjs@^3.0.0 \
   eslint-config-prettier@^9.1.0 globals@^15.14.0
 ```
+
 Expected: all packages appear under root `devDependencies`.
 
 - [ ] **Step 2: Create `eslint.config.js`**
@@ -346,10 +358,7 @@ export default tseslint.config(
   js.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
-    extends: [
-      ...tseslint.configs.strictTypeChecked,
-      ...tseslint.configs.stylisticTypeChecked,
-    ],
+    extends: [...tseslint.configs.strictTypeChecked, ...tseslint.configs.stylisticTypeChecked],
     plugins: {
       "@stylistic": stylistic,
       "simple-import-sort": simpleImportSort,
@@ -499,7 +508,8 @@ export default tseslint.config(
         },
         {
           selector: "NewExpression[callee.name='Date'][arguments.length=0]",
-          message: "core must be deterministic: pass time in; don't call new Date() for the current time.",
+          message:
+            "core must be deterministic: pass time in; don't call new Date() for the current time.",
         },
       ],
     },
@@ -605,10 +615,12 @@ git commit -m "chore: add eslint flat config enforcing all quality rules"
 ## Task 6: Vitest with coverage
 
 **Files:**
+
 - Create: `packages/core/vitest.config.ts`
 - Modify: `packages/core/package.json` (add `test` script + dev deps)
 
 **Interfaces:**
+
 - Consumes: `@sipilian/core` package (Task 3).
 - Produces: `pnpm test` running Vitest in `packages/core` with v8 coverage and an 80% threshold on new code.
 
@@ -690,9 +702,11 @@ git commit -m "chore: add vitest with coverage to @sipilian/core"
 ## Task 7: `AGENTS.md`
 
 **Files:**
+
 - Create: `AGENTS.md`
 
 **Interfaces:**
+
 - Consumes: spec §9.
 - Produces: the canonical rules file for humans + agents.
 
@@ -704,35 +718,44 @@ git commit -m "chore: add vitest with coverage to @sipilian/core"
 These rules mirror the design spec §9 and are enforced by `pnpm lint` / `pnpm typecheck` / `pnpm test`. All are blocking in CI.
 
 ## Principles
+
 - TypeScript `strict: true` everywhere; never `any` — use `unknown` + narrowing.
 - No business logic in UI. Domain rules live in `packages/core` as pure, I/O-free functions returning `Result<Ok | Err>` for expected errors.
 - One source of truth for types: Drizzle schema infers DB types; Zod validates input at API boundaries and is shared mobile ↔ web.
 
 ## Dependency direction (enforced by `no-restricted-imports`)
+
 - `core` must not import `@sipilian/db`, `drizzle-orm`, `@neondatabase/serverless`, `react`, `react-native`, or anything under `apps/`.
 - `db` must not import `react`, `react-native`, or anything under `apps/` (may use `core`).
 
 ## Naming
+
 - Files `kebab-case`; React components `PascalCase`; vars/functions `camelCase`; constants `UPPER_CASE`; DB tables `snake_case` plural.
 - `snake_case` keys only via object literals (Zod) and inferred Drizzle types. Hand-written interface/type properties stay `camelCase`.
 
 ## Size & complexity caps (all `.ts` AND `.tsx`)
+
 - `max-lines` 300 · `max-lines-per-function` 20 · `max-params` 4 · `max-depth` 3 · `max-nested-callbacks` 3 · `complexity` 10 · `sonarjs/cognitive-complexity` 10.
 - Blank/comment lines are skipped in line counts. React components are decomposed aggressively to satisfy the 20-line function cap.
 
 ## JSDoc
+
 - Mandatory on every function declaration, method, and named arrow. No `@example`. No types in JSDoc (types come from TS).
 
 ## No inline types
+
 - Every object type and literal-union annotation must be a named `interface`/`type`.
 
 ## Spacing (`@stylistic/padding-line-between-statements`, auto-fixable)
+
 - Blank line after `import` block / directive / `const|let|var` (consecutive same-kind may stay adjacent).
 - Blank line before `return`.
 - Blank line before & after `if/for/while/switch/try/function/class`.
 
 ## Module-specific rules (spec §9.8)
+
 `(lint)` = machine-enforced/blocking · `(convention)` = enforced via review.
+
 - **`core`:** pure & deterministic — no `Date.now`, no-arg `new Date()`, `Math.random`, or timers; inject time/randomness. `Date.parse`/`new Date(iso)`/`Math.max` are fine. Barrel-only public surface (no deep imports). `Result`, never `throw` for expected errors. `(lint)`
 - **`db`:** schema split by domain area; **only `src/client.ts`** may import `@neondatabase/serverless` — everything else uses the shared `db`. Inferred `$inferSelect`/`$inferInsert` are the row-type source of truth; no hand-written row interfaces. `(lint)`
 - **`auth`:** client via subpath exports (`@sipilian/auth/client-web`, `/client-expo`); roles as named constants; auth tables' schema stays in `db`. `(lint)`
@@ -741,9 +764,11 @@ These rules mirror the design spec §9 and are enforced by `pnpm lint` / `pnpm t
 - **`apps/mobile`:** feature-based (`features/<name>/{components,hooks,api,screens}`); server-state via TanStack Query, UI-state via Zustand — server data never in Zustand, no business logic in stores `(convention)`; NativeWind-only (no `StyleSheet` import); no `packages/db` import. `(lint + convention)`
 
 ## Definition of Done (per task)
+
 - Tests pass · lint clean · typecheck passes · coverage of new code ≥ 80%.
 
 ## Commits
+
 - Conventional Commits. Work on a branch; never commit straight to `main`.
 ```
 
@@ -764,18 +789,22 @@ git commit -m "docs: add AGENTS.md working agreement"
 ## Task 8: Foundation gate check
 
 **Files:**
+
 - None (verification only).
 
 **Interfaces:**
+
 - Consumes: everything from Tasks 1–7.
 - Produces: proof that all four gates run green on the skeleton before domain work begins.
 
 - [ ] **Step 1: Run the full gate suite**
 
 Run:
+
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm format:check
 ```
+
 Expected: all four PASS. `pnpm test` reports 0 test files but exits 0 (no failures). If Vitest exits non-zero on "no tests", that is expected only until Part B adds tests — proceed to Task 9.
 
 - [ ] **Step 2: Commit (marker, if any lockfile churn)**
@@ -790,11 +819,13 @@ git commit -m "chore: verify foundation gates green" --allow-empty
 ## Task 9: `Result` type (TDD)
 
 **Files:**
+
 - Create: `packages/core/src/result.ts`
 - Test: `packages/core/src/result.test.ts`
 - Modify: `packages/core/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `interface Ok<T> { readonly ok: true; readonly value: T }`
@@ -933,11 +964,13 @@ git commit -m "feat(core): add Result type with ok/err helpers"
 ## Task 10: Domain constants (TDD)
 
 **Files:**
+
 - Create: `packages/core/src/domain.ts`
 - Test: `packages/core/src/domain.test.ts`
 - Modify: `packages/core/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `type SubtestKind = "twk" | "tiu" | "tkp"`
@@ -1008,11 +1041,13 @@ git commit -m "feat(core): add SubtestKind domain constants"
 ## Task 11: Objective scoring — TWK/TIU (TDD)
 
 **Files:**
+
 - Create: `packages/core/src/scoring.ts`
 - Test: `packages/core/src/scoring.test.ts`
 - Modify: `packages/core/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: `SubtestKind` (Task 10); `Result`, `ok`, `err` (Task 9).
 - Produces:
   - `type ScoringErrorCode = "negative_correct_count" | "invalid_tkp_weight"`
@@ -1170,10 +1205,12 @@ git commit -m "feat(core): score objective TWK/TIU subtests"
 ## Task 12: Weighted scoring — TKP (TDD)
 
 **Files:**
+
 - Modify: `packages/core/src/scoring.ts`
 - Modify: `packages/core/src/scoring.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ScoringError`, `SubtestScore`, `Result`, `ok`, `err` (Task 11).
 - Produces:
   - `interface TkpScoreInput { readonly selectedWeights: readonly number[]; readonly passingGrade: number }`
@@ -1238,9 +1275,7 @@ export interface TkpScoreInput {
  * @param input - The selected option weights and the passing grade.
  * @returns Ok with the subtest score, or Err when any weight is outside 1..5.
  */
-export const scoreTkpSubtest = (
-  input: TkpScoreInput,
-): Result<SubtestScore, ScoringError> => {
+export const scoreTkpSubtest = (input: TkpScoreInput): Result<SubtestScore, ScoringError> => {
   const hasInvalidWeight = input.selectedWeights.some((weight) => weight < 1 || weight > 5);
 
   if (hasInvalidWeight) {
@@ -1280,10 +1315,12 @@ git commit -m "feat(core): score weighted TKP subtests"
 ## Task 13: Tryout aggregate scoring (TDD)
 
 **Files:**
+
 - Modify: `packages/core/src/scoring.ts`
 - Modify: `packages/core/src/scoring.test.ts`
 
 **Interfaces:**
+
 - Consumes: `SubtestScore` (Task 11).
 - Produces:
   - `interface TryoutScore { readonly subtests: readonly SubtestScore[]; readonly totalScore: number; readonly passedAll: boolean }`
@@ -1325,12 +1362,7 @@ describe("scoreTryout", () => {
 The `./scoring` import line becomes:
 
 ```ts
-import {
-  scoreObjectiveSubtest,
-  scoreTkpSubtest,
-  scoreTryout,
-  type SubtestScore,
-} from "./scoring";
+import { scoreObjectiveSubtest, scoreTkpSubtest, scoreTryout, type SubtestScore } from "./scoring";
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -1390,11 +1422,13 @@ git commit -m "feat(core): aggregate tryout scoring across subtests"
 ## Task 14: Spaced repetition — SM-2 lite (TDD)
 
 **Files:**
+
 - Create: `packages/core/src/spaced-repetition.ts`
 - Test: `packages/core/src/spaced-repetition.test.ts`
 - Modify: `packages/core/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `interface ReviewState { readonly repetitions: number; readonly intervalDays: number; readonly easeFactor: number }`
@@ -1583,11 +1617,13 @@ git commit -m "feat(core): add SM-2 lite spaced repetition scheduler"
 ## Task 15: XP calculation (TDD)
 
 **Files:**
+
 - Create: `packages/core/src/gamification.ts`
 - Test: `packages/core/src/gamification.test.ts`
 - Modify: `packages/core/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `interface XpInput { readonly correctCount: number; readonly questionCount: number }`
@@ -1688,10 +1724,12 @@ git commit -m "feat(core): add lesson XP calculation"
 ## Task 16: Streak calculation (TDD)
 
 **Files:**
+
 - Modify: `packages/core/src/gamification.ts`
 - Modify: `packages/core/src/gamification.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `interface StreakState { readonly currentStreak: number; readonly longestStreak: number; readonly lastActivityDate: string }`
@@ -1834,18 +1872,22 @@ git commit -m "feat(core): add streak calculation with anti-cheat server dates"
 ## Task 17: Final Definition-of-Done gate
 
 **Files:**
+
 - None (verification only).
 
 **Interfaces:**
+
 - Consumes: everything from Tasks 1–16.
 - Produces: proof the whole foundation + core meets the §9.6 Definition of Done.
 
 - [ ] **Step 1: Run the full gate suite from a clean state**
 
 Run:
+
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm format:check
 ```
+
 Expected: all PASS. Vitest reports every `packages/core` test green and coverage ≥ 80% for lines, functions, branches, and statements (the threshold fails the run otherwise).
 
 - [ ] **Step 2: Confirm the branch is clean**
@@ -1863,6 +1905,7 @@ Expected: branch pushed; open a PR per the finishing-a-development-branch workfl
 ## Self-Review
 
 **1. Spec coverage (Foundation + core scope):**
+
 - §3 monorepo (pnpm + Turborepo) → Tasks 1, 3.
 - §9.1 strict TS, dependency direction → Tasks 2, 5.
 - §9.4 size/complexity caps → Task 5 (`max-lines`, `max-lines-per-function`, `max-params`, `max-depth`, `max-nested-callbacks`, `complexity`, `cognitive-complexity`).
@@ -1870,7 +1913,7 @@ Expected: branch pushed; open a PR per the finishing-a-development-branch workfl
 - §9.7 full flat config incl. naming, no-inline-types, JSDoc, import sort → Task 5.
 - §9.7.2 padding-line-between-statements → Task 5 (`@stylistic/padding-line-between-statements`).
 - §9.8.1 `core` determinism (no current-time/random reads) → Task 5 (`no-restricted-properties`, `no-restricted-globals`, `no-restricted-syntax` Date guard) + AGENTS.md (Task 7).
-- §9.8.2 `db` single-connection (`@neondatabase/serverless` only in `client.ts`) → Task 5 (db + `client.ts` blocks) + AGENTS.md (Task 7). *(The db blocks are forward-looking config; `packages/db` itself lands in its own later plan.)*
+- §9.8.2 `db` single-connection (`@neondatabase/serverless` only in `client.ts`) → Task 5 (db + `client.ts` blocks) + AGENTS.md (Task 7). _(The db blocks are forward-looking config; `packages/db` itself lands in its own later plan.)_
 - §9.8.3–9.8.6 (`auth`, `api`, `apps/web`, `apps/mobile`) → summarized in AGENTS.md (Task 7); full enforcement lands in each module's own future plan.
 - §9.6 Definition of Done (test/lint/typecheck/coverage ≥80) → Task 6 thresholds + Tasks 8, 17 gates.
 - §3.3 error handling `Result` → Task 9.
