@@ -587,3 +587,137 @@ Lesson berjalan & progres tahan putus koneksi; konten di-cache ringan. Offline p
 4. Billing asli (Google Play / App Store) menggantikan entitlement manual.
 5. Segmen baru: TNI/Polri, lalu BUMN.
 6. Jalur kontributor soal + moderasi; offline penuh.
+
+---
+
+## 12. Fase Rencana Implementasi (Walking Skeleton)
+
+Urutan fase mengikuti **strategi walking skeleton** (§1) dan **arah dependensi**
+(§3): fondasi murni dulu (`core`), lalu lapisan data & auth, lalu API, baru klien.
+Tiap fase menghasilkan **software yang berjalan & teruji sendiri**. Rencana
+bite-sized (langkah TDD detail per task) menyusul di
+`docs/superpowers/plans/` per subsistem.
+
+**Aturan lintas fase:** setiap task tunduk pada Definition of Done §9.6 (test lulus
+· lint bersih · typecheck lolos · coverage kode baru ≥ 80%) dan Coding Rules §9.
+
+**Legenda status:** `[ ]` belum · `[~]` berjalan · `[x]` selesai.
+
+### Fase 0 — Fondasi Monorepo & Tooling ✅ SELESAI (validasi 2026-07-12)
+
+Tujuan: kerangka repo & gerbang kualitas hidup sejak commit pertama.
+
+- [x] Inisialisasi monorepo: pnpm workspaces + Turborepo (§3).
+- [x] Konfigurasi TypeScript `strict: true` (base tsconfig + per-paket).
+- [x] ESLint flat config final (§9.7) — semua rule global, SonarJS, batas ukuran,
+      JSDoc, naming, `padding-line-between-statements`.
+- [x] Override `no-restricted-imports` per paket (arah dependensi §3, §9.8).
+- [x] Prettier + integrasi `eslint-config-prettier`.
+- [x] Vitest (colocated) + skrip coverage.
+- [x] `AGENTS.md` repo (tuangkan aturan §9 + konvensi non-lint).
+- [x] CI: gate blocking (test · lint · typecheck · coverage ≥ 80%).
+
+**Selesai fase:** `pnpm lint/typecheck/test` hijau di repo kosong; CI menolak
+pelanggaran. — **Terverifikasi:** `pnpm lint` ✓ · `pnpm typecheck` ✓ ·
+`pnpm format:check` ✓.
+
+### Fase 1 — `packages/core` (Logika Domain Murni, TDD wajib) ✅ SELESAI (validasi 2026-07-12)
+
+Tujuan: aturan bisnis kritikal sebagai fungsi murni deterministik (§5, §9.8.1).
+
+- [x] Tipe `Result<Ok | Err>` + pola `<Domain>Error` / `<Domain>ErrorCode`.
+- [x] Skoring CAT: TWK/TIU (benar=5/salah=0) & TKP berbobot 1–5 + passing grade
+      per subtes (§4 aturan skoring).
+- [x] Spaced repetition (SM-2 disederhanakan) — jadwal review (§5.2).
+- [x] Kalkulasi XP & streak (harian + terpanjang), waktu **di-inject** (§9.8.1).
+- [x] Barrel `index.ts`; larangan sumber non-determinisme aktif (lint).
+
+**Selesai fase:** semua fungsi domain teruji unit tanpa DB/jaringan; coverage
+tinggi pada area rawan (§10.3). — **Terverifikasi:** 27 test lulus (5 file),
+coverage **100%** (stmts/branch/funcs/lines).
+
+### Fase 2 — `packages/db` (Drizzle + Neon) ✅ SELESAI (validasi 2026-07-12)
+
+Tujuan: sumber kebenaran skema (§4, §9.8.2).
+
+- [x] `src/client.ts` (satu-satunya koneksi Neon/Drizzle).
+- [x] Skema per area: `content.ts`, `tryout.ts`, `progress.ts`, `monetization.ts`.
+- [x] Tabel Better Auth (`user`/`session`/`account`/`verification`) di sini.
+- [x] Ekspor tipe `$inferSelect`/`$inferInsert` per tabel.
+- [x] Migrasi via `drizzle-kit`, di-commit ke `drizzle/` (tak diedit tangan) —
+      `drizzle/0000_mature_bedlam.sql`.
+- [x] Override lint: `@neondatabase/serverless` hanya dari `client.ts`;
+      `no-duplicate-string: off` di `schema/**`.
+
+**Selesai fase:** migrasi ter-apply ke Neon (dev/test branch); tipe baris ter-share.
+— **Terverifikasi:** 30 test lulus (7 file), coverage **84.75%** (≥ 80%); migrasi
+`0000_mature_bedlam` ter-apply ke Neon dev (`neondb`) via `pnpm db:migrate` —
+**20 tabel** terbuat (16 domain + 4 auth) & tercatat di
+`drizzle.__drizzle_migrations`.
+
+### Fase 3 — `packages/auth` (Better Auth)
+
+Tujuan: sesi dua klien (mobile token + admin cookie) (§9.8.3).
+
+- [ ] `src/server.ts` (instance & konfigurasi server) + `authEnv` (Zod fail-fast).
+- [ ] Subpath `client-web` (cookie) & `client-expo` (`@better-auth/expo`).
+- [ ] `src/roles.ts` (`"admin"`, `"user"`); tipe `Session` / `AuthUser`.
+
+**Selesai fase:** daftar/masuk berfungsi terhadap tabel auth Fase 2.
+
+### Fase 4 — `packages/api` (RPC Server Functions)
+
+Tujuan: batas HTTP tipis yang mendelegasikan ke `core`/`db` (§9.8.4).
+
+- [ ] `src/http.ts` — map kode error domain → status+body.
+- [ ] Fitur `lessons`: `submitLesson` (`*.schema.ts` + `*.handler.ts`).
+- [ ] Fitur `tryouts`: `startTryout`, `submitTryout` (timer server, idempoten).
+- [ ] Fitur `progress`: `syncProgress` (buffer offline).
+- [ ] Fitur `content` & `entitlements`: baca konten, `setEntitlement`.
+- [ ] Integration test vs Neon test branch (submit lesson, mulai/submit tryout,
+      sync) (§10.3).
+
+**Selesai fase:** endpoint kunci teruji integrasi; skoring dihitung server (§10.1).
+
+### Fase 5 — `apps/web` (Admin + Host API)
+
+Tujuan: authoring konten & host server functions (§6, §9.8.5).
+
+- [ ] Route-guard peran `admin` di layout; wiring server functions tipis.
+- [ ] Manajemen soal + opsi + pembahasan + `difficulty` + status draft→published.
+- [ ] Struktur konten: subtes → topik → unit → lesson (urutan) + pilih soal.
+- [ ] Paket tryout (komposisi 35/30/45, free/premium, publish).
+- [ ] Import CSV: validasi + preview + commit di server.
+- [ ] Set entitlement manual (testing).
+- [ ] Lint front-end: `react` + `react-hooks` + `jsx-a11y`; larang impor `db`
+      langsung (lewat `api`).
+
+**Selesai fase:** admin bisa membuat konten ketiga subtes end-to-end.
+
+### Fase 6 — `apps/mobile` (Expo)
+
+Tujuan: pengalaman pengguna inti (§5, §9.8.6).
+
+- [ ] Fitur `learn`: jalur belajar (unit→lesson terkunci), feedback + pembahasan,
+      XP, streak, nyawa.
+- [ ] Fitur `review`: sesi soal jatuh tempo (spaced repetition).
+- [ ] Fitur `tryout`: ujian bertimer 110 soal + hasil per subtes.
+- [ ] Fitur `profile`: XP, streak, kalender aktivitas.
+- [ ] Fitur `paywall`: batas nyawa, rewarded ad isi ulang, interstitial, Premium.
+- [ ] State split: TanStack Query (server) + Zustand (UI lokal); NativeWind-only;
+      buffer jawaban offline di `features/<x>/api`.
+
+**Selesai fase:** app menjalankan learn/review/tryout untuk TWK/TIU/TKP.
+
+### Fase 7 — Validasi Walking Skeleton (Definisi Selesai MVP)
+
+Tujuan: buktikan seluruh rantai tersambung & tervalidasi (§1).
+
+- [ ] Seed konten minimal ketiga subtes (via admin/CSV).
+- [ ] Alur end-to-end: daftar/masuk → learn → review → tryout → skoring →
+      pembahasan, dengan sinkronisasi progres & ketahanan offline dasar.
+- [ ] Titik freemium/iklan pertama aktif (nyawa + entitlement manual).
+- [ ] Konfirmasi Definition of Done §9.6 lulus di CI untuk seluruh slice.
+
+**Selesai fase = MVP tercapai:** SKD lengkap (TWK/TIU/TKP) berjalan end-to-end
+dengan semua sistem tersambung. Selanjutnya → **scale by content** (Roadmap §11).
