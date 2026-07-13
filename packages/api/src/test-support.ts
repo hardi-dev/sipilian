@@ -305,10 +305,17 @@ export async function seedContent(database: Database): Promise<SeededContent> {
 /**
  * Deletes the seeded user (cascades sessions/progress) and content rows.
  * @param database - The shared Drizzle instance.
- * @param seeded - The identifiers returned by seedContent.
+ * @param seeded - The identifiers returned by seedContent, or undefined when
+ *   seeding failed (e.g. the DB was unreachable). In that case cleanup is a
+ *   no-op so the original seeding error surfaces instead of a `userId` crash.
  * @returns Nothing; resolves once all rows are removed.
  */
-export async function cleanup(database: Database, seeded: SeededContent): Promise<void> {
+export async function cleanup(
+  database: Database,
+  seeded: SeededContent | undefined,
+): Promise<void> {
+  if (!seeded) return;
+
   await database.delete(users).where(eq(users.id, seeded.userId));
   await database.delete(subtests).where(eq(subtests.id, seeded.subtestId));
   await database.delete(tryoutPackages).where(eq(tryoutPackages.id, seeded.packageId));
