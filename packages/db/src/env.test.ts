@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dbEnvSchema } from "./env";
+import { dbEnvSchema, FALLBACK_URL } from "./env";
 
 describe("dbEnvSchema", () => {
   it("accepts a valid databaseUrl", () => {
@@ -13,15 +13,23 @@ describe("dbEnvSchema", () => {
     }
   });
 
-  it("rejects an empty databaseUrl", () => {
+  it("uses fallback for an empty databaseUrl", () => {
     const result = dbEnvSchema.safeParse({ databaseUrl: "" });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.databaseUrl).toBe(FALLBACK_URL);
+    }
   });
 
-  it("rejects a missing databaseUrl", () => {
+  it("uses the fallback URL when databaseUrl is missing", () => {
     const result = dbEnvSchema.safeParse({});
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.databaseUrl).toBe(FALLBACK_URL);
+    }
   });
 });
