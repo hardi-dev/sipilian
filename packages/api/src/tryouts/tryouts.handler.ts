@@ -379,18 +379,15 @@ async function executeSubmit(
 
   await saveAnswers(ctx.db, attemptResult.value.id, input.answers);
   await updateAttemptScores({
-    database: ctx.db,
-    attemptId: attemptResult.value.id,
-    scores: scoresResult,
-    overall,
-    now: ctx.now,
+    database: ctx.db, attemptId: attemptResult.value.id,
+    scores: scoresResult, overall, now: ctx.now,
   });
 
-  return ok({
-    subtests: scoresResult,
-    totalScore: overall.totalScore,
-    passedAll: overall.passedAll,
-  });
+  const value: SubmitTryoutResult = {
+    subtests: scoresResult, totalScore: overall.totalScore, passedAll: overall.passedAll,
+  };
+
+  return ok(value);
 }
 
 /**

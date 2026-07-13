@@ -18,13 +18,24 @@ export const dbEnvSchema: z.ZodType<DbEnv> = z.object({
 const FALLBACK_URL = "postgres://u:pass@localhost:5432/db";
 
 /**
+ * Resolves DATABASE_URL from the environment, falling back to a placeholder in CI.
+ * @returns The database URL string.
+ */
+function resolveDatabaseUrl(): string {
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.length > 0) {
+    return process.env.DATABASE_URL;
+  }
+
+  if (process.env.CI === "true") {
+    return FALLBACK_URL;
+  }
+
+  return "";
+}
+
+/**
  * Parses process.env once at module load; throws on an invalid shape.
  */
 export const dbEnv: DbEnv = dbEnvSchema.parse({
-  databaseUrl:
-    process.env.DATABASE_URL && process.env.DATABASE_URL.length > 0
-      ? process.env.DATABASE_URL
-      : process.env.CI === "true"
-        ? FALLBACK_URL
-        : "",
+  databaseUrl: resolveDatabaseUrl(),
 });
