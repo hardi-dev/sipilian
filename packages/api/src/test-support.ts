@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { db as _typeAnchor } from "@sipilian/db";
 import {
   lessonQuestions,
@@ -11,7 +13,6 @@ import {
   units,
   users,
 } from "@sipilian/db/schema";
-import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 
 import type { RequestContext } from "./context";
