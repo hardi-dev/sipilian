@@ -349,8 +349,13 @@ async function computeScoresForInput(
   ctx: RequestContext,
   input: SubmitTryoutInput,
 ): Promise<readonly SubtestScore[]> {
-  const kindMap = await loadQuestionKindMap(ctx.db, input.answers.map((a) => a.questionId));
-  const { value } = await computeScores(ctx.db, input.answers, kindMap) as Ok<readonly SubtestScore[]>;
+  const kindMap = await loadQuestionKindMap(
+    ctx.db,
+    input.answers.map((a) => a.questionId),
+  );
+  const { value } = (await computeScores(ctx.db, input.answers, kindMap)) as Ok<
+    readonly SubtestScore[]
+  >;
 
   return value;
 }
@@ -381,7 +386,11 @@ async function executeSubmit(
     now: ctx.now,
   });
 
-  return ok({ subtests: scoresResult, totalScore: overall.totalScore, passedAll: overall.passedAll });
+  return ok({
+    subtests: scoresResult,
+    totalScore: overall.totalScore,
+    passedAll: overall.passedAll,
+  });
 }
 
 /**
