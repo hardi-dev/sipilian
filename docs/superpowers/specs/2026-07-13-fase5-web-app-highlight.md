@@ -91,14 +91,59 @@ Import CSV: validasi + preview + commit di server; set entitlement manual (testi
 brainstorm 5b/5c akan diputuskan apakah digabung atau mana yang lebih dulu. 5a
 membuka blokir semua sub-fase lain.
 
-## 5. Definition of Done (Fase, ringkas)
+## 5. Struktur Folder `apps/web` (feature-based, acuan 5a–5e)
+
+Selaras dengan `apps/mobile` (`AGENTS.md`): tiap sub-fase 5b–5e = **satu modul
+`features/<name>`**. Route tipis; isi domain di `features/`; infra host bersama di
+`server/`.
+
+```
+apps/web/
+├─ src/
+│  ├─ routes/                    # TanStack Start file-based routing (TIPIS — shell saja)
+│  │  ├─ __root.tsx
+│  │  ├─ index.tsx              # redirect → /admin atau /login
+│  │  ├─ login.tsx              # halaman login (publik)            [5a]
+│  │  ├─ api/auth/$.ts          # catch-all → auth.handler           [5a]
+│  │  └─ _admin/                 # layout terproteksi (beforeLoad guard)
+│  │     ├─ route.tsx           # guard sesi→isAdmin                 [5a]
+│  │     ├─ index.tsx           # dashboard: getLearningPath         [5a]
+│  │     ├─ content/…  [5b]  questions/… [5c]  tryouts/… [5d]  import/… [5e]
+│  │
+│  ├─ features/                  # isi domain tiap sub-fase
+│  │  ├─ auth/                   [5a]  components/ · hooks/ · server/
+│  │  ├─ content/  [5b]   ├─ questions/ [5c]
+│  │  ├─ tryouts/  [5d]   └─ import/    [5e]
+│  │        └─ (masing-masing) components/ · hooks/ · server/
+│  │
+│  ├─ server/                    # infra host BERSAMA (bukan per-feature)  [5a]
+│  │  ├─ session.ts             # PURE: resolveAuthorization(session|null) → Result (di-unit-test)
+│  │  ├─ auth-middleware.ts     # createMiddleware: getSession → ctx.userId + guard isAdmin
+│  │  └─ request-context.ts     # buildRequestContext(userId) → RequestContext (@sipilian/api)
+│  │
+│  ├─ components/ui/             # primitif shadcn/ui
+│  ├─ lib/                       # auth-client (@sipilian/auth/client-web), cn(), utils
+│  └─ styles/globals.css         # Tailwind v4
+│
+├─ vite.config.ts                # + ssr.noExternal untuk transpile @sipilian/* (source-only)
+└─ package.json · tsconfig.json
+```
+
+**Aturan aliran (menegakkan `AGENTS.md` §apps/web):**
+`routes/*` (tipis) → `features/<x>/components` → `features/<x>/hooks` (TanStack
+Query) → `features/<x>/server` (`createServerFn`) → `@sipilian/api` → `core`/`db`.
+Komponen **tak** memanggil server fn langsung; **tak ada** impor `packages/db` di
+seluruh `apps/web`. Folder `features/<name>` per sub-fase: 5b `content`, 5c
+`questions`, 5d `tryouts`, 5e `import`.
+
+## 6. Definition of Done (Fase, ringkas)
 
 - Kelima sub-fase (5a–5e) selesai; tiap PR: test lulus · lint bersih · typecheck
   lulus · coverage kode baru ≥ 80% (per `AGENTS.md`).
 - Admin bisa authoring konten TWK/TIU/TKP end-to-end (§12 "Selesai fase").
 - Batas API walking-skeleton dapat dipanggil via host web (`createServerFn`).
 
-## 6. Di Luar Cakupan Fase 5 (fase lain)
+## 7. Di Luar Cakupan Fase 5 (fase lain)
 
 - **`apps/mobile` (Expo)** — Fase 6.
 - **Pengalaman pengguna akhir** (learn/review/tryout runtime) — Fase 6; `apps/web`
