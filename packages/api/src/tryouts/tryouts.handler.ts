@@ -235,14 +235,16 @@ async function updateAttemptScores(input: UpdateScoresInput): Promise<void> {
   const tiuScore = input.scores.find((s) => s.kind === "tiu")?.rawScore ?? null;
   const tkpScore = input.scores.find((s) => s.kind === "tkp")?.rawScore ?? null;
 
-  await input.database.update(tryoutAttempts).set({
-    endedAt: input.now,
-    twkScore,
-    tiuScore,
-    tkpScore,
-    totalScore: input.overall.totalScore,
-    passedAll: input.overall.passedAll,
-  })
+  await input.database
+    .update(tryoutAttempts)
+    .set({
+      endedAt: input.now,
+      twkScore,
+      tiuScore,
+      tkpScore,
+      totalScore: input.overall.totalScore,
+      passedAll: input.overall.passedAll,
+    })
     .where(eq(tryoutAttempts.id, input.attemptId));
 }
 
@@ -276,7 +278,12 @@ async function scoreOneKind(
     return scoreTkpKind(kindAnswers.filter(hasWeight), info.passingGrade);
   }
 
-  return scoreObjectiveKind(database, kind as ObjectiveKind, kindAnswers.filter(hasOptionId), info.passingGrade);
+  return scoreObjectiveKind(
+    database,
+    kind as ObjectiveKind,
+    kindAnswers.filter(hasOptionId),
+    info.passingGrade,
+  );
 }
 
 /**
@@ -295,9 +302,7 @@ async function computeScores(
   const kinds: readonly string[] = ["twk", "tiu", "tkp"];
 
   for (const kind of kinds) {
-    const kindAnswers = answers.filter(
-      (a) => kindMap.get(a.questionId)?.kind === kind,
-    );
+    const kindAnswers = answers.filter((a) => kindMap.get(a.questionId)?.kind === kind);
 
     if (kindAnswers.length === 0) continue;
 
@@ -327,8 +332,13 @@ async function executeSubmit(
 
   if (isErr(attemptResult)) return attemptResult;
 
-  const kindMap = await loadQuestionKindMap(ctx.db, input.answers.map((a) => a.questionId));
-  const { value: scoresResult } = await computeScores(ctx.db, input.answers, kindMap) as Ok<readonly SubtestScore[]>;
+  const kindMap = await loadQuestionKindMap(
+    ctx.db,
+    input.answers.map((a) => a.questionId),
+  );
+  const { value: scoresResult } = (await computeScores(ctx.db, input.answers, kindMap)) as Ok<
+    readonly SubtestScore[]
+  >;
 
   const overall = scoreTryout(scoresResult);
 
@@ -341,7 +351,11 @@ async function executeSubmit(
     now: ctx.now,
   });
 
-  return ok({ subtests: scoresResult, totalScore: overall.totalScore, passedAll: overall.passedAll });
+  return ok({
+    subtests: scoresResult,
+    totalScore: overall.totalScore,
+    passedAll: overall.passedAll,
+  });
 }
 
 /**

@@ -50,10 +50,7 @@ describe("getLesson", () => {
 
   it("returns not_found for a non-existent lesson", async () => {
     const ctx = testContext(db, seeded.userId);
-    const result = await getLesson(
-      { lessonId: "00000000-0000-0000-0000-000000000000" },
-      ctx,
-    );
+    const result = await getLesson({ lessonId: "00000000-0000-0000-0000-000000000000" }, ctx);
 
     expect(result.ok).toBe(false);
 

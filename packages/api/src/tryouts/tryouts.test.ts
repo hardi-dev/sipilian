@@ -227,34 +227,49 @@ describe("submitTryout with TKP", () => {
 
   async function seedTkp(): Promise<TkpSeed> {
     const tag = randomUUID().replace(/-/g, "").slice(0, 12);
-    const [user] = await db.insert(users).values({
-      id: sql`gen_random_uuid()`,
-      name: "TKP Test",
-      email: `tkp-${tag}@example.com`,
-    }).returning();
-    const [subtest] = await db.insert(subtests).values({
-      slug: `tkp-${tag}`,
-      name: "TKP",
-      passingGrade: 0,
-    }).returning();
-    const [topic] = await db.insert(topics).values({
-      subtestId: subtest!.id,
-      slug: "integritas",
-      name: "Integritas",
-    }).returning();
-    const [q] = await db.insert(questions).values({
-      topicId: topic!.id,
-      type: "multiple_choice",
-      status: "published",
-      difficulty: 1,
-      stem: "TKP Q1",
-    }).returning();
-    const [pkg] = await db.insert(tryoutPackages).values({
-      slug: `tkp-pkg-${tag}`,
-      name: "TKP Tryout",
-      durationMinutes: 30,
-      composition: { twk: 0, tiu: 0, tkp: 1 },
-    }).returning();
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: sql`gen_random_uuid()`,
+        name: "TKP Test",
+        email: `tkp-${tag}@example.com`,
+      })
+      .returning();
+    const [subtest] = await db
+      .insert(subtests)
+      .values({
+        slug: `tkp-${tag}`,
+        name: "TKP",
+        passingGrade: 0,
+      })
+      .returning();
+    const [topic] = await db
+      .insert(topics)
+      .values({
+        subtestId: subtest!.id,
+        slug: "integritas",
+        name: "Integritas",
+      })
+      .returning();
+    const [q] = await db
+      .insert(questions)
+      .values({
+        topicId: topic!.id,
+        type: "multiple_choice",
+        status: "published",
+        difficulty: 1,
+        stem: "TKP Q1",
+      })
+      .returning();
+    const [pkg] = await db
+      .insert(tryoutPackages)
+      .values({
+        slug: `tkp-pkg-${tag}`,
+        name: "TKP Tryout",
+        durationMinutes: 30,
+        composition: { twk: 0, tiu: 0, tkp: 1 },
+      })
+      .returning();
 
     await db.insert(tryoutPackageQuestions).values({
       packageId: pkg!.id,

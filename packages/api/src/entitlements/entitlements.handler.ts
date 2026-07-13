@@ -30,10 +30,13 @@ export async function setEntitlement(
     updatedAt: ctx.now,
   };
 
-  await ctx.db.insert(entitlements).values(values).onConflictDoUpdate({
-    target: entitlements.userId,
-    set: { plan: input.plan, expiresAt: values.expiresAt, updatedAt: ctx.now },
-  });
+  await ctx.db
+    .insert(entitlements)
+    .values(values)
+    .onConflictDoUpdate({
+      target: entitlements.userId,
+      set: { plan: input.plan, expiresAt: values.expiresAt, updatedAt: ctx.now },
+    });
 
   return ok({ userId: input.userId, plan: input.plan });
 }

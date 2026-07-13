@@ -22,12 +22,12 @@ mulai/submit tryout, sinkron progres, set entitlement.
 | Aspek              | Keputusan                                                                        |
 | ------------------ | -------------------------------------------------------------------------------- |
 | Bentuk API         | **Handler agnostik-framework** `action(input, ctx)` → `Result<Output, ApiError>` |
-| Context            | `RequestContext { userId, db, now }` — session→userId di-resolve di Fase 5        |
-| Kopling auth       | `api` **tidak** impor `@sipilian/auth`; hanya `core` + `db`                       |
-| Cakupan            | **Set lengkap §9.8.4** (content, lessons, tryouts, progress, entitlements)        |
-| Idempotensi        | `idempotencyKey` + tabel `request_idempotency` untuk submitLesson/submitTryout    |
-| Determinisme waktu | `ctx.now` di-inject ke fungsi `core` (streak, review) di batas API                |
-| Error → HTTP       | `ApiError { code, httpStatus, message }` + `toHttp()` terpusat                    |
+| Context            | `RequestContext { userId, db, now }` — session→userId di-resolve di Fase 5       |
+| Kopling auth       | `api` **tidak** impor `@sipilian/auth`; hanya `core` + `db`                      |
+| Cakupan            | **Set lengkap §9.8.4** (content, lessons, tryouts, progress, entitlements)       |
+| Idempotensi        | `idempotencyKey` + tabel `request_idempotency` untuk submitLesson/submitTryout   |
+| Determinisme waktu | `ctx.now` di-inject ke fungsi `core` (streak, review) di batas API               |
+| Error → HTTP       | `ApiError { code, httpStatus, message }` + `toHttp()` terpusat                   |
 | Testing            | Unit (schema, http, idempotency) + integrasi vs Neon dev `neondb` (dgn cleanup)  |
 
 ## 3. Arsitektur & Boundary
@@ -85,15 +85,15 @@ Perubahan di `@sipilian/db`: tabel `request_idempotency` + migrasi baru.
 
 ## 5. Handler (verba per §9.8.4)
 
-| Handler           | Input (Zod)                                       | Delegasi                                                          | Idempotensi              |
-| ----------------- | ------------------------------------------------- | ---------------------------------------------------------------- | ------------------------ |
-| `getLearningPath` | `{ subtestKind }`                                 | `db` (subtests→topics→units→lessons)                             | baca                     |
-| `getLesson`       | `{ lessonId }`                                    | `db` (lesson + questions + options)                             | baca                     |
-| `submitLesson`    | `{ lessonId, answers[], idempotencyKey }`         | `core.calculateXp/updateStreak/scheduleReview` + tulis `db`       | **key**                  |
-| `startTryout`     | `{ packageId }`                                   | `db` (insert attempt `endedAt=null`, atau kembalikan yg aktif)   | reuse attempt aktif      |
-| `submitTryout`    | `{ attemptId, answers[], idempotencyKey }`        | `core.scoreObjectiveSubtest/scoreTkpSubtest/scoreTryout` + `db`   | **key** + `endedAt`      |
-| `syncProgress`    | `{ items[] }`                                     | `db` upsert (`user_question_states`, `daily_activity`)          | upsert                   |
-| `setEntitlement`  | `{ userId, plan, expiresAt }`                     | `db` upsert (`entitlements`)                                    | upsert                   |
+| Handler           | Input (Zod)                                | Delegasi                                                        | Idempotensi         |
+| ----------------- | ------------------------------------------ | --------------------------------------------------------------- | ------------------- |
+| `getLearningPath` | `{ subtestKind }`                          | `db` (subtests→topics→units→lessons)                            | baca                |
+| `getLesson`       | `{ lessonId }`                             | `db` (lesson + questions + options)                             | baca                |
+| `submitLesson`    | `{ lessonId, answers[], idempotencyKey }`  | `core.calculateXp/updateStreak/scheduleReview` + tulis `db`     | **key**             |
+| `startTryout`     | `{ packageId }`                            | `db` (insert attempt `endedAt=null`, atau kembalikan yg aktif)  | reuse attempt aktif |
+| `submitTryout`    | `{ attemptId, answers[], idempotencyKey }` | `core.scoreObjectiveSubtest/scoreTkpSubtest/scoreTryout` + `db` | **key** + `endedAt` |
+| `syncProgress`    | `{ items[] }`                              | `db` upsert (`user_question_states`, `daily_activity`)          | upsert              |
+| `setEntitlement`  | `{ userId, plan, expiresAt }`              | `db` upsert (`entitlements`)                                    | upsert              |
 
 ### Catatan mekanik penting
 
@@ -143,11 +143,7 @@ Dua perubahan digabung dalam satu migrasi `0001_*` (Fase 4):
 
 ```ts
 export type ApiErrorCode =
-  | "validation_failed"
-  | "not_found"
-  | "forbidden"
-  | "conflict"
-  | "unprocessable";
+  "validation_failed" | "not_found" | "forbidden" | "conflict" | "unprocessable";
 
 export interface ApiError {
   readonly code: ApiErrorCode;

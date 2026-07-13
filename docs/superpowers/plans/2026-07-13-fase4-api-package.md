@@ -50,11 +50,13 @@ Modified in `@sipilian/db`: new `src/schema/idempotency.ts`, `tryout.ts` (nullab
 ## Task 1: Scaffold `@sipilian/api` + `context.ts` + `http.ts`
 
 **Files:**
+
 - Create: `packages/api/package.json`, `tsconfig.json`, `vitest.config.ts`
 - Create: `packages/api/src/context.ts`, `src/http.ts`, `src/http.test.ts`
 - Modify: `eslint.config.js` (add `packages/api/**` override)
 
 **Interfaces:**
+
 - Produces: `interface RequestContext { readonly userId: string; readonly db: Db; readonly now: Date }`; `type ApiErrorCode`; `interface ApiError { readonly code: ApiErrorCode; readonly httpStatus: number; readonly message: string }`; `interface HttpError`; `apiError(code, message): ApiError`; `toHttp(error): HttpError`.
 
 - [ ] **Step 1: `packages/api/package.json`**
@@ -197,11 +199,7 @@ Expected: FAIL — cannot resolve `./http`.
  * Machine-readable API error codes shared across handlers.
  */
 export type ApiErrorCode =
-  | "validation_failed"
-  | "not_found"
-  | "forbidden"
-  | "conflict"
-  | "unprocessable";
+  "validation_failed" | "not_found" | "forbidden" | "conflict" | "unprocessable";
 
 /**
  * Expected API error returned by handlers instead of throwing.
@@ -273,12 +271,14 @@ git commit -m "feat(api): scaffold @sipilian/api with context and http error map
 ## Task 2: DB migration — `request_idempotency` table + nullable tryout scores
 
 **Files:**
+
 - Create: `packages/db/src/schema/idempotency.ts`
 - Modify: `packages/db/src/schema/index.ts` (export), `packages/db/src/schema/tryout.ts` (nullable scores), `packages/db/src/schema/progress.ts` (unique on `user_question_states`)
 - Modify: `packages/db/src/schema/tryout.test.ts`, `packages/db/src/schema/progress.test.ts`, create `packages/db/src/schema/idempotency.test.ts`
 - Create: `packages/db/drizzle/0001_*.sql` (generated)
 
 **Interfaces:**
+
 - Produces: `requestIdempotency` table + `RequestIdempotencyRow`/`RequestIdempotencyInsertRow`; `tryoutAttempts` score columns nullable; `user_question_states` gains `unique(user_id, question_id)` (required by the upserts in Tasks 6 & 8).
 
 - [ ] **Step 1: Write failing tests** — `packages/db/src/schema/idempotency.test.ts`
@@ -374,7 +374,9 @@ export const userQuestionStates = pgTable(
   {
     // ...existing columns unchanged...
   },
-  (table) => [unique("user_question_states_user_question_unique").on(table.userId, table.questionId)],
+  (table) => [
+    unique("user_question_states_user_question_unique").on(table.userId, table.questionId),
+  ],
 );
 ```
 
@@ -392,11 +394,13 @@ Expected: PASS.
 - [ ] **Step 7: Generate + apply the migration**
 
 Run (from repo root of the worktree):
+
 ```bash
 cd packages/db
 DATABASE_URL="$(grep -E '^DATABASE_URL=' ../../.env | cut -d= -f2-)" pnpm db:generate
 DATABASE_URL="$(grep -E '^DATABASE_URL=' ../../.env | cut -d= -f2-)" pnpm db:migrate
 ```
+
 Expected: `0001_*.sql` created with `CREATE TABLE "request_idempotency"`, `ALTER TABLE "tryout_attempts" ALTER COLUMN "twk_score" DROP NOT NULL` (×5), and a unique constraint `user_question_states_user_question_unique` on `user_question_states`; `migrations applied successfully!`
 
 > `pnpm db:migrate` requires the `db:migrate` script from Fase 3. If it is absent on this branch, add it to `packages/db/package.json` scripts: `"db:migrate": "drizzle-kit migrate --config drizzle.config.ts"`.
@@ -404,6 +408,7 @@ Expected: `0001_*.sql` created with `CREATE TABLE "request_idempotency"`, `ALTER
 - [ ] **Step 8: Verify in Neon**
 
 Run (from `packages/db`):
+
 ```bash
 DATABASE_URL="$(grep -E '^DATABASE_URL=' ../../.env | cut -d= -f2-)" node --input-type=module -e '
 import { neon } from "@neondatabase/serverless";
@@ -413,6 +418,7 @@ const c = await sql`select is_nullable from information_schema.columns where tab
 console.log(t, c);
 '
 ```
+
 Expected: `tbl` non-null; `is_nullable` = `YES`.
 
 - [ ] **Step 9: Commit**
@@ -427,9 +433,11 @@ git commit -m "feat(db): add request_idempotency table and make tryout scores nu
 ## Task 3: Integration test support (`test-support.ts`)
 
 **Files:**
+
 - Create: `packages/api/src/test-support.ts` (excluded from coverage)
 
 **Interfaces:**
+
 - Produces: `interface SeededContent { userId; subtestId; lessonId; questionIds: string[]; correctOptionByQuestion: Record<string,string>; packageId }`; `seedContent(db): Promise<SeededContent>`; `cleanup(db, seeded): Promise<void>`; `testContext(db, userId): RequestContext`.
 
 - [ ] **Step 1: Implement `packages/api/src/test-support.ts`**
@@ -504,7 +512,12 @@ export async function seedContent(database: Database): Promise<SeededContent> {
     .values({ unitId: unit!.id, slug: "l1", name: "Lesson 1", order: 1 })
     .returning();
 
-  return seedQuestions(database, { userId: user!.id, subtestId: subtest!.id, topicId: topic!.id, lessonId: lesson!.id });
+  return seedQuestions(database, {
+    userId: user!.id,
+    subtestId: subtest!.id,
+    topicId: topic!.id,
+    lessonId: lesson!.id,
+  });
 }
 
 /**
@@ -523,7 +536,13 @@ async function seedQuestions(
   for (let index = 0; index < 2; index += 1) {
     const [question] = await database
       .insert(questions)
-      .values({ topicId: ids.topicId, type: "multiple_choice", status: "published", difficulty: 1, stem: `Q${index.toString()}` })
+      .values({
+        topicId: ids.topicId,
+        type: "multiple_choice",
+        status: "published",
+        difficulty: 1,
+        stem: `Q${index.toString()}`,
+      })
       .returning();
     const [right] = await database
       .insert(questionOptions)
@@ -543,11 +562,18 @@ async function seedQuestions(
 
   const [pkg] = await database
     .insert(tryoutPackages)
-    .values({ slug: `skd-${Date.now().toString()}`, name: "Tryout", durationMinutes: 100, composition: { twk: 2, tiu: 0, tkp: 0 } })
+    .values({
+      slug: `skd-${Date.now().toString()}`,
+      name: "Tryout",
+      durationMinutes: 100,
+      composition: { twk: 2, tiu: 0, tkp: 0 },
+    })
     .returning();
 
   for (const [order, questionId] of questionIds.entries()) {
-    await database.insert(tryoutPackageQuestions).values({ packageId: pkg!.id, questionId, order: order + 1 });
+    await database
+      .insert(tryoutPackageQuestions)
+      .values({ packageId: pkg!.id, questionId, order: order + 1 });
   }
 
   return { ...ids, questionIds, correctOptionByQuestion, packageId: pkg!.id };
@@ -585,9 +611,11 @@ git commit -m "test(api): add seed/cleanup integration support helpers"
 ## Task 4: `idempotency.ts`
 
 **Files:**
+
 - Create: `packages/api/src/idempotency.ts`, `src/idempotency.test.ts`
 
 **Interfaces:**
+
 - Consumes: `RequestContext`; `requestIdempotency`; `ok`, `isErr` from `@sipilian/core`.
 - Produces: `withIdempotency<Output, ApiErr>(ctx, key, fn): Promise<Result<Output, ApiErr>>`.
 
@@ -695,7 +723,9 @@ export async function withIdempotency<Output, ApiErr>(
     return result;
   }
 
-  await ctx.db.insert(requestIdempotency).values({ userId: ctx.userId, key, response: result.value });
+  await ctx.db
+    .insert(requestIdempotency)
+    .values({ userId: ctx.userId, key, response: result.value });
 
   return result;
 }
@@ -719,9 +749,11 @@ git commit -m "feat(api): add withIdempotency replay helper backed by request_id
 ## Task 5: Content reads — `getLearningPath`, `getLesson`
 
 **Files:**
+
 - Create: `packages/api/src/content/content.schema.ts`, `content.handler.ts`, `content.test.ts`
 
 **Interfaces:**
+
 - Produces: `getLearningPathInputSchema`, `GetLearningPathInput`, `getLearningPath(input, ctx): Promise<Result<LearningPath, ApiError>>`; `getLessonInputSchema`, `GetLessonInput`, `getLesson(input, ctx): Promise<Result<LessonDetail, ApiError>>`. Types `LearningPath`, `LessonDetail`, `LessonQuestionView`.
 
 - [ ] **Step 1: Write the failing test** — `packages/api/src/content/content.test.ts`
@@ -988,9 +1020,11 @@ git commit -m "feat(api): add getLearningPath and getLesson content reads"
 ## Task 6: `submitLesson`
 
 **Files:**
+
 - Create: `packages/api/src/lessons/lessons.schema.ts`, `lessons.handler.ts`, `lessons.test.ts`
 
 **Interfaces:**
+
 - Consumes: `withIdempotency`; `calculateXp`, `updateStreak`, `scheduleReview` from `@sipilian/core`; db tables `lessonCompletions`, `userStats`, `userQuestionStates`, `dailyActivity`, `questionOptions`.
 - Produces: `submitLessonInputSchema`, `SubmitLessonInput`, `submitLesson(input, ctx): Promise<Result<LessonResult, ApiError>>`; `interface LessonResult { correctCount; xpEarned; currentStreak }`.
 
@@ -1051,7 +1085,12 @@ describe("submitLesson", () => {
     const rows = await db
       .select()
       .from(lessonCompletions)
-      .where(and(eq(lessonCompletions.userId, seeded.userId), eq(lessonCompletions.lessonId, seeded.lessonId)));
+      .where(
+        and(
+          eq(lessonCompletions.userId, seeded.userId),
+          eq(lessonCompletions.lessonId, seeded.lessonId),
+        ),
+      );
 
     expect(rows).toHaveLength(1);
   });
@@ -1155,13 +1194,20 @@ async function advanceStreak(ctx: RequestContext, today: string): Promise<number
     await ctx.db
       .insert(userStats)
       .values({ userId: ctx.userId, currentStreak: 1, longestStreak: 1, lastActivityDate: today })
-      .onConflictDoUpdate({ target: userStats.userId, set: { currentStreak: 1, longestStreak: 1, lastActivityDate: today } });
+      .onConflictDoUpdate({
+        target: userStats.userId,
+        set: { currentStreak: 1, longestStreak: 1, lastActivityDate: today },
+      });
 
     return 1;
   }
 
   const next = updateStreak({
-    previous: { currentStreak: stats.currentStreak, longestStreak: stats.longestStreak, lastActivityDate: stats.lastActivityDate },
+    previous: {
+      currentStreak: stats.currentStreak,
+      longestStreak: stats.longestStreak,
+      lastActivityDate: stats.lastActivityDate,
+    },
     activityDate: today,
   });
 
@@ -1180,13 +1226,33 @@ async function applyReviews(ctx: RequestContext, questionIds: readonly string[])
   const nextDate = new Date(ctx.now);
 
   for (const questionId of questionIds) {
-    const state = scheduleReview({ previous: { repetitions: 0, intervalDays: 0, easeFactor: 2.5 }, quality: 5 });
+    const state = scheduleReview({
+      previous: { repetitions: 0, intervalDays: 0, easeFactor: 2.5 },
+      quality: 5,
+    });
     const nextReviewAt = new Date(nextDate.getTime() + state.intervalDays * 86_400_000);
 
     await ctx.db
       .insert(userQuestionStates)
-      .values({ userId: ctx.userId, questionId, repetitions: state.repetitions, intervalDays: state.intervalDays, easeFactor: state.easeFactor.toFixed(2), nextReviewAt, lastReviewedAt: ctx.now })
-      .onConflictDoUpdate({ target: [userQuestionStates.userId, userQuestionStates.questionId], set: { repetitions: state.repetitions, intervalDays: state.intervalDays, easeFactor: state.easeFactor.toFixed(2), nextReviewAt, lastReviewedAt: ctx.now } });
+      .values({
+        userId: ctx.userId,
+        questionId,
+        repetitions: state.repetitions,
+        intervalDays: state.intervalDays,
+        easeFactor: state.easeFactor.toFixed(2),
+        nextReviewAt,
+        lastReviewedAt: ctx.now,
+      })
+      .onConflictDoUpdate({
+        target: [userQuestionStates.userId, userQuestionStates.questionId],
+        set: {
+          repetitions: state.repetitions,
+          intervalDays: state.intervalDays,
+          easeFactor: state.easeFactor.toFixed(2),
+          nextReviewAt,
+          lastReviewedAt: ctx.now,
+        },
+      });
   }
 }
 
@@ -1205,12 +1271,20 @@ export async function submitLesson(
     const correctCount = await countCorrect(ctx.db, input.answers);
     const xpEarned = calculateXp({ correctCount, questionCount: input.answers.length });
 
-    await ctx.db.insert(lessonCompletions).values({ userId: ctx.userId, lessonId: input.lessonId, score: correctCount, xp: xpEarned });
-    await ctx.db.insert(dailyActivity).values({ userId: ctx.userId, activityDate: today }).onConflictDoNothing();
+    await ctx.db
+      .insert(lessonCompletions)
+      .values({ userId: ctx.userId, lessonId: input.lessonId, score: correctCount, xp: xpEarned });
+    await ctx.db
+      .insert(dailyActivity)
+      .values({ userId: ctx.userId, activityDate: today })
+      .onConflictDoNothing();
 
     const currentStreak = await advanceStreak(ctx, today);
 
-    await applyReviews(ctx, input.answers.map((answer) => answer.questionId));
+    await applyReviews(
+      ctx,
+      input.answers.map((answer) => answer.questionId),
+    );
 
     return ok({ correctCount, xpEarned, currentStreak });
   });
@@ -1236,9 +1310,11 @@ git commit -m "feat(api): add submitLesson with scoring, XP/streak and review sc
 ## Task 7: `startTryout` + `submitTryout`
 
 **Files:**
+
 - Create: `packages/api/src/tryouts/tryouts.schema.ts`, `tryouts.handler.ts`, `tryouts.test.ts`
 
 **Interfaces:**
+
 - Consumes: `withIdempotency`; `scoreObjectiveSubtest`, `scoreTkpSubtest`, `scoreTryout`, `SubtestScore` from `@sipilian/core`; tables `tryoutAttempts`, `tryoutAnswers`, `tryoutPackageQuestions`, `questions`, `questionOptions`, `topics`, `subtests`.
 - Produces: `startTryoutInputSchema`/`StartTryoutInput`, `startTryout(input, ctx)`; `submitTryoutInputSchema`/`SubmitTryoutInput`, `submitTryout(input, ctx)`; `interface TryoutResult { attemptId; totalScore; passedAll; subtests: SubtestScore[] }`.
 
@@ -1278,7 +1354,11 @@ describe("startTryout + submitTryout", () => {
       questionId,
       optionId: seeded.correctOptionByQuestion[questionId]!,
     }));
-    const input = { attemptId: started.value.attemptId, answers, idempotencyKey: `to-${Date.now().toString()}` };
+    const input = {
+      attemptId: started.value.attemptId,
+      answers,
+      idempotencyKey: `to-${Date.now().toString()}`,
+    };
 
     const first = await submitTryout(input, ctx);
     const second = await submitTryout(input, ctx);
@@ -1294,7 +1374,7 @@ describe("startTryout + submitTryout", () => {
 });
 ```
 
-> Two objective TWK questions, both correct → `2 × 5 = 10` per objective rule; the seed maps both to TWK, so `totalScore = 10 + 0 + 0`. Adjust the expected `20` to `10` if the seed keeps two questions — **use `10`** (2 correct × 5). *(Correct expectation: `10`.)*
+> Two objective TWK questions, both correct → `2 × 5 = 10` per objective rule; the seed maps both to TWK, so `totalScore = 10 + 0 + 0`. Adjust the expected `20` to `10` if the seed keeps two questions — **use `10`** (2 correct × 5). _(Correct expectation: `10`.)_
 
 - [ ] **Step 2: Run to verify failure**
 
@@ -1428,7 +1508,10 @@ export async function submitTryout(
   ctx: RequestContext,
 ): Promise<Result<TryoutResult, ApiError>> {
   return withIdempotency(ctx, input.idempotencyKey, async () => {
-    const [attempt] = await ctx.db.select().from(tryoutAttempts).where(eq(tryoutAttempts.id, input.attemptId));
+    const [attempt] = await ctx.db
+      .select()
+      .from(tryoutAttempts)
+      .where(eq(tryoutAttempts.id, input.attemptId));
 
     if (!attempt) {
       return err(apiError("not_found", "Attempt not found"));
@@ -1450,7 +1533,10 @@ async function scoreAndPersist(
   input: SubmitTryoutInput,
   attemptId: string,
 ): Promise<Result<TryoutResult, ApiError>> {
-  const kinds = await kindByQuestion(ctx, input.answers.map((answer) => answer.questionId));
+  const kinds = await kindByQuestion(
+    ctx,
+    input.answers.map((answer) => answer.questionId),
+  );
   const correctIds = await correctOptionIds(ctx, input);
   const scored = scoreByKind({ input, kinds, correctIds });
 
@@ -1462,7 +1548,12 @@ async function scoreAndPersist(
 
   await persistAttempt(ctx, attemptId, tryout);
 
-  return ok({ attemptId, totalScore: tryout.totalScore, passedAll: tryout.passedAll, subtests: tryout.subtests });
+  return ok({
+    attemptId,
+    totalScore: tryout.totalScore,
+    passedAll: tryout.passedAll,
+    subtests: tryout.subtests,
+  });
 }
 ```
 
@@ -1475,8 +1566,13 @@ async function scoreAndPersist(
  * @param input - The tryout submission.
  * @returns A set of option ids that are correct.
  */
-async function correctOptionIds(ctx: RequestContext, input: SubmitTryoutInput): Promise<Set<string>> {
-  const optionIds = input.answers.map((answer) => answer.optionId).filter((id): id is string => Boolean(id));
+async function correctOptionIds(
+  ctx: RequestContext,
+  input: SubmitTryoutInput,
+): Promise<Set<string>> {
+  const optionIds = input.answers
+    .map((answer) => answer.optionId)
+    .filter((id): id is string => Boolean(id));
 
   if (optionIds.length === 0) {
     return new Set();
@@ -1489,7 +1585,12 @@ async function correctOptionIds(ctx: RequestContext, input: SubmitTryoutInput): 
   const correct = await ctx.db
     .select({ id: questionOptions.id })
     .from(questionOptions)
-    .where(inArray(questionOptions.id, rows.map((row) => row.id)));
+    .where(
+      inArray(
+        questionOptions.id,
+        rows.map((row) => row.id),
+      ),
+    );
 
   return new Set(correct.filter((row) => row.id).map((row) => row.id));
 }
@@ -1517,7 +1618,10 @@ function scoreByKind(args: ScoreByKindInput): Result<SubtestScore[], ApiError> {
 
   const twk = scoreObjectiveSubtest({ kind: "twk", correctCount: twkCorrect, passingGrade: 0 });
   const tiu = scoreObjectiveSubtest({ kind: "tiu", correctCount: tiuCorrect, passingGrade: 0 });
-  const tkp = tkpWeights.length > 0 ? scoreTkpSubtest({ selectedWeights: tkpWeights, passingGrade: 0 }) : ok(zeroTkp());
+  const tkp =
+    tkpWeights.length > 0
+      ? scoreTkpSubtest({ selectedWeights: tkpWeights, passingGrade: 0 })
+      : ok(zeroTkp());
 
   return collectScores([twk, tiu, tkp]);
 }
@@ -1534,7 +1638,10 @@ function scoreByKind(args: ScoreByKindInput): Result<SubtestScore[], ApiError> {
  */
 function countCorrectFor(args: ScoreByKindInput, kind: Kind): number {
   return args.input.answers.filter(
-    (answer) => args.kinds.get(answer.questionId) === kind && answer.optionId !== undefined && args.correctIds.has(answer.optionId),
+    (answer) =>
+      args.kinds.get(answer.questionId) === kind &&
+      answer.optionId !== undefined &&
+      args.correctIds.has(answer.optionId),
   ).length;
 }
 
@@ -1579,11 +1686,19 @@ async function persistAttempt(
   attemptId: string,
   tryout: { subtests: readonly SubtestScore[]; totalScore: number; passedAll: boolean },
 ): Promise<void> {
-  const byKind = (kind: Kind): number => tryout.subtests.find((score) => score.kind === kind)?.rawScore ?? 0;
+  const byKind = (kind: Kind): number =>
+    tryout.subtests.find((score) => score.kind === kind)?.rawScore ?? 0;
 
   await ctx.db
     .update(tryoutAttempts)
-    .set({ endedAt: ctx.now, twkScore: byKind("twk"), tiuScore: byKind("tiu"), tkpScore: byKind("tkp"), totalScore: tryout.totalScore, passedAll: tryout.passedAll })
+    .set({
+      endedAt: ctx.now,
+      twkScore: byKind("twk"),
+      tiuScore: byKind("tiu"),
+      tkpScore: byKind("tkp"),
+      totalScore: tryout.totalScore,
+      passedAll: tryout.passedAll,
+    })
     .where(eq(tryoutAttempts.id, attemptId));
 }
 ```
@@ -1605,10 +1720,12 @@ git commit -m "feat(api): add startTryout and submitTryout with server-side CAT 
 ## Task 8: `syncProgress` + `setEntitlement`
 
 **Files:**
+
 - Create: `packages/api/src/progress/progress.schema.ts`, `progress.handler.ts`, `progress.test.ts`
 - Create: `packages/api/src/entitlements/entitlements.schema.ts`, `entitlements.handler.ts`, `entitlements.test.ts`
 
 **Interfaces:**
+
 - Produces: `syncProgressInputSchema`/`SyncProgressInput`, `syncProgress(input, ctx)`; `setEntitlementInputSchema`/`SetEntitlementInput`, `setEntitlement(input, ctx)`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1648,7 +1765,12 @@ describe("syncProgress", () => {
     const rows = await db
       .select()
       .from(userQuestionStates)
-      .where(and(eq(userQuestionStates.userId, seeded.userId), eq(userQuestionStates.questionId, seeded.questionIds[0]!)));
+      .where(
+        and(
+          eq(userQuestionStates.userId, seeded.userId),
+          eq(userQuestionStates.questionId, seeded.questionIds[0]!),
+        ),
+      );
 
     expect(rows).toHaveLength(1);
   });
@@ -1752,14 +1874,26 @@ export async function syncProgress(
   ctx: RequestContext,
 ): Promise<Result<SyncResult, ApiError>> {
   for (const item of input.items) {
-    const state = scheduleReview({ previous: { repetitions: 0, intervalDays: 0, easeFactor: 2.5 }, quality: item.quality });
+    const state = scheduleReview({
+      previous: { repetitions: 0, intervalDays: 0, easeFactor: 2.5 },
+      quality: item.quality,
+    });
     const nextReviewAt = new Date(ctx.now.getTime() + state.intervalDays * 86_400_000);
-    const values = { repetitions: state.repetitions, intervalDays: state.intervalDays, easeFactor: state.easeFactor.toFixed(2), nextReviewAt, lastReviewedAt: ctx.now };
+    const values = {
+      repetitions: state.repetitions,
+      intervalDays: state.intervalDays,
+      easeFactor: state.easeFactor.toFixed(2),
+      nextReviewAt,
+      lastReviewedAt: ctx.now,
+    };
 
     await ctx.db
       .insert(userQuestionStates)
       .values({ userId: ctx.userId, questionId: item.questionId, ...values })
-      .onConflictDoUpdate({ target: [userQuestionStates.userId, userQuestionStates.questionId], set: values });
+      .onConflictDoUpdate({
+        target: [userQuestionStates.userId, userQuestionStates.questionId],
+        set: values,
+      });
   }
 
   return ok({ synced: input.items.length });
@@ -1816,7 +1950,10 @@ export async function setEntitlement(
   await ctx.db
     .insert(entitlements)
     .values({ userId: input.userId, plan: input.plan, expiresAt: input.expiresAt })
-    .onConflictDoUpdate({ target: entitlements.userId, set: { plan: input.plan, expiresAt: input.expiresAt } });
+    .onConflictDoUpdate({
+      target: entitlements.userId,
+      set: { plan: input.plan, expiresAt: input.expiresAt },
+    });
 
   return ok({ userId: input.userId, plan: input.plan });
 }
@@ -1839,10 +1976,12 @@ git commit -m "feat(api): add syncProgress and setEntitlement upsert handlers"
 ## Task 9: Barrel, AGENTS.md convention, final gate
 
 **Files:**
+
 - Create: `packages/api/src/index.ts`
 - Modify: `AGENTS.md` (add the api `no-throw-in-handlers` convention)
 
 **Interfaces:**
+
 - Produces: barrel exporting all handlers, schemas, `RequestContext`, `ApiError`/`toHttp`/`apiError`, and result types.
 
 - [ ] **Step 1: `packages/api/src/index.ts`**
@@ -1897,5 +2036,6 @@ git commit -m "feat(api): add package barrel and document handler no-throw conve
 **3. Type consistency:** `RequestContext` (Task 1) consumed everywhere. `ApiError`/`apiError`/`toHttp` (Task 1) used by all handlers. `withIdempotency` (Task 4) used by submitLesson/submitTryout. `SeededContent`/`seedContent`/`cleanup`/`testContext` (Task 3) used by all integration tests. Core signatures match verified sources: `calculateXp({correctCount, questionCount})`, `updateStreak({previous, activityDate})`, `scheduleReview({previous, quality})`, `scoreObjectiveSubtest({kind, correctCount, passingGrade})`, `scoreTkpSubtest({selectedWeights, passingGrade})`, `scoreTryout(subtests)`. DB columns match `content.ts`/`progress.ts`/`tryout.ts`/`monetization.ts`.
 
 **4. Known caveats to verify at execution:**
+
 - Upsert conflict targets: `daily_activity` already has `unique(user_id, activity_date)`; `user_stats` and `entitlements` already have `unique(user_id)`. `user_question_states` was **missing** its `unique(user_id, question_id)` — now **added in Task 2 (Step 4b)** so the Task 6/8 upserts have a valid conflict target.
 - `correctOptionIds` in Task 7 is written defensively; simplify to a single `WHERE isCorrect = true` query if the double-query reads awkwardly during implementation (behavior identical).

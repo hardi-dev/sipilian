@@ -21,7 +21,10 @@ describe("setEntitlement", () => {
   it("creates a new entitlement row with the given plan", async () => {
     const ctx = testContext(db, seeded.userId);
 
-    const result = await setEntitlement({ userId: seeded.userId, plan: "premium", expiresAt: null }, ctx);
+    const result = await setEntitlement(
+      { userId: seeded.userId, plan: "premium", expiresAt: null },
+      ctx,
+    );
 
     expect(result.ok).toBe(true);
 
@@ -47,7 +50,10 @@ describe("setEntitlement", () => {
   it("upserts the plan and produces only one row when called again for the same user", async () => {
     const ctx = testContext(db, seeded.userId);
 
-    const result1 = await setEntitlement({ userId: seeded.userId, plan: "free", expiresAt: null }, ctx);
+    const result1 = await setEntitlement(
+      { userId: seeded.userId, plan: "free", expiresAt: null },
+      ctx,
+    );
 
     expect(result1.ok).toBe(true);
 
@@ -55,7 +61,10 @@ describe("setEntitlement", () => {
       expect(result1.value.plan).toBe("free");
     }
 
-    const result2 = await setEntitlement({ userId: seeded.userId, plan: "premium", expiresAt: null }, ctx);
+    const result2 = await setEntitlement(
+      { userId: seeded.userId, plan: "premium", expiresAt: null },
+      ctx,
+    );
 
     expect(result2.ok).toBe(true);
 

@@ -38,10 +38,7 @@ describe("syncProgress", () => {
     const ctx = testContext(db, seeded.userId);
     const questionId = seeded.questionIds[0]!;
 
-    const result1 = await syncProgress(
-      { items: [{ questionId, quality: 4 }] },
-      ctx,
-    );
+    const result1 = await syncProgress({ items: [{ questionId, quality: 4 }] }, ctx);
 
     expect(result1.ok).toBe(true);
 
@@ -49,10 +46,7 @@ describe("syncProgress", () => {
       expect(result1.value.synced).toBe(1);
     }
 
-    const result2 = await syncProgress(
-      { items: [{ questionId, quality: 5 }] },
-      ctx,
-    );
+    const result2 = await syncProgress({ items: [{ questionId, quality: 5 }] }, ctx);
 
     expect(result2.ok).toBe(true);
 

@@ -28,13 +28,19 @@ async function loadCurrentState(
   const [existing] = await database
     .select()
     .from(userQuestionStates)
-    .where(and(eq(userQuestionStates.userId, userId), eq(userQuestionStates.questionId, questionId)));
+    .where(
+      and(eq(userQuestionStates.userId, userId), eq(userQuestionStates.questionId, questionId)),
+    );
 
   if (existing === undefined) {
     return { repetitions: 0, intervalDays: 0, easeFactor: 2.5 };
   }
 
-  return { repetitions: existing.repetitions, intervalDays: existing.intervalDays, easeFactor: Number(existing.easeFactor) };
+  return {
+    repetitions: existing.repetitions,
+    intervalDays: existing.intervalDays,
+    easeFactor: Number(existing.easeFactor),
+  };
 }
 
 /**
@@ -52,14 +58,22 @@ async function upsertQuestionProgress(
   const state = scheduleReview({ previous, quality });
   const nextReviewAt = new Date(ctx.now.getTime() + state.intervalDays * 86_400_000);
   const rv = {
-    userId: ctx.userId, questionId,
-    repetitions: state.repetitions, intervalDays: state.intervalDays,
-    easeFactor: state.easeFactor.toFixed(2), nextReviewAt, lastReviewedAt: ctx.now,
+    userId: ctx.userId,
+    questionId,
+    repetitions: state.repetitions,
+    intervalDays: state.intervalDays,
+    easeFactor: state.easeFactor.toFixed(2),
+    nextReviewAt,
+    lastReviewedAt: ctx.now,
   };
 
-  await ctx.db.insert(userQuestionStates).values(rv).onConflictDoUpdate({
-    target: [userQuestionStates.userId, userQuestionStates.questionId], set: rv,
-  });
+  await ctx.db
+    .insert(userQuestionStates)
+    .values(rv)
+    .onConflictDoUpdate({
+      target: [userQuestionStates.userId, userQuestionStates.questionId],
+      set: rv,
+    });
 }
 
 /**

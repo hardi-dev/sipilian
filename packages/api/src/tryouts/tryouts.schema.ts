@@ -19,10 +19,9 @@ export const tryoutAnswerSchema = z
     optionId: z.uuid().optional(),
     weight: z.number().int().min(1).max(5).optional(),
   })
-  .refine(
-    (data) => (data.optionId !== undefined) !== (data.weight !== undefined),
-    { message: "Exactly one of optionId or weight must be provided" },
-  );
+  .refine((data) => (data.optionId !== undefined) !== (data.weight !== undefined), {
+    message: "Exactly one of optionId or weight must be provided",
+  });
 
 export type TryoutAnswer = z.infer<typeof tryoutAnswerSchema>;
 

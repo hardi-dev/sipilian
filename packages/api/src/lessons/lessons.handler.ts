@@ -39,10 +39,7 @@ function toIsoDay(date: Date): string {
  * @param answers - The submitted answers.
  * @returns The number of correct answers.
  */
-async function countCorrect(
-  database: Db,
-  answers: SubmitLessonInput["answers"],
-): Promise<number> {
+async function countCorrect(database: Db, answers: SubmitLessonInput["answers"]): Promise<number> {
   const optionIds = answers.map((answer) => answer.optionId);
   const correctRows = await database
     .select({ id: questionOptions.id })
@@ -135,14 +132,22 @@ async function upsertReviewState(
   });
   const nextReviewAt = new Date(nextDate.getTime() + state.intervalDays * 86_400_000);
   const rv = {
-    userId: ctx.userId, questionId,
-    repetitions: state.repetitions, intervalDays: state.intervalDays,
-    easeFactor: state.easeFactor.toFixed(2), nextReviewAt, lastReviewedAt: ctx.now,
+    userId: ctx.userId,
+    questionId,
+    repetitions: state.repetitions,
+    intervalDays: state.intervalDays,
+    easeFactor: state.easeFactor.toFixed(2),
+    nextReviewAt,
+    lastReviewedAt: ctx.now,
   };
 
-  await ctx.db.insert(userQuestionStates).values(rv).onConflictDoUpdate({
-    target: [userQuestionStates.userId, userQuestionStates.questionId], set: rv,
-  });
+  await ctx.db
+    .insert(userQuestionStates)
+    .values(rv)
+    .onConflictDoUpdate({
+      target: [userQuestionStates.userId, userQuestionStates.questionId],
+      set: rv,
+    });
 }
 
 /**
@@ -178,9 +183,11 @@ async function executeLesson(
   const correctCount = await countCorrect(ctx.db, input.answers);
   const xpEarned = calculateXp({ correctCount, questionCount: input.answers.length });
 
-  await ctx.db.insert(lessonCompletions)
+  await ctx.db
+    .insert(lessonCompletions)
     .values({ userId: ctx.userId, lessonId: input.lessonId, score: correctCount, xp: xpEarned });
-  await ctx.db.insert(dailyActivity)
+  await ctx.db
+    .insert(dailyActivity)
     .values({ userId: ctx.userId, activityDate: today })
     .onConflictDoNothing();
 

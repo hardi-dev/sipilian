@@ -232,7 +232,10 @@ export default tseslint.config(
           paths: [
             { name: "react", message: "api must stay UI-free." },
             { name: "react-native", message: "api must stay UI-free." },
-            { name: "@sipilian/auth", message: "api must not depend on auth; userId comes via ctx." },
+            {
+              name: "@sipilian/auth",
+              message: "api must not depend on auth; userId comes via ctx.",
+            },
           ],
           patterns: ["**/apps/**"],
         },

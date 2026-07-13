@@ -74,11 +74,7 @@ export function testContext(database: Database, userId: string): RequestContext 
  * @param stem - The question stem text.
  * @returns The new question's id.
  */
-async function insertQuestion(
-  database: Database,
-  topicId: string,
-  stem: string,
-): Promise<string> {
+async function insertQuestion(database: Database, topicId: string, stem: string): Promise<string> {
   const [row] = await database
     .insert(questions)
     .values({ topicId, type: "multiple_choice", status: "published", difficulty: 1, stem })
@@ -126,9 +122,7 @@ async function seedLessonQuestion(
   questionId: string,
   order: number,
 ): Promise<void> {
-  await database
-    .insert(lessonQuestions)
-    .values({ lessonId, questionId, order });
+  await database.insert(lessonQuestions).values({ lessonId, questionId, order });
 }
 
 /**
@@ -279,19 +273,12 @@ async function seedPackage(database: Database, questionIds: string[]): Promise<s
  * @param ids - The parent hierarchy ids.
  * @returns The full seeded identifier set.
  */
-async function seedQuestions(
-  database: Database,
-  ids: HierarchyIds,
-): Promise<SeededContent> {
+async function seedQuestions(database: Database, ids: HierarchyIds): Promise<SeededContent> {
   const questionIds: string[] = [];
   const correctOptionByQuestion: Record<string, string> = {};
 
   for (let index = 0; index < 2; index += 1) {
-    const result = await seedOneQuestionWithOptions(
-      database,
-      ids.topicId,
-      `Q${index.toString()}`,
-    );
+    const result = await seedOneQuestionWithOptions(database, ids.topicId, `Q${index.toString()}`);
 
     await seedLessonQuestion(database, ids.lessonId, result.questionId, index + 1);
 

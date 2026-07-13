@@ -1,4 +1,4 @@
-import { isErr, ok,type Result } from "@sipilian/core";
+import { isErr, ok, type Result } from "@sipilian/core";
 import { requestIdempotency } from "@sipilian/db/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -10,10 +10,7 @@ import type { RequestContext } from "./context";
  * @param key - The idempotency key to look up.
  * @returns The stored output, or undefined when no record exists.
  */
-async function lookupCachedResult(
-  ctx: RequestContext,
-  key: string,
-): Promise<unknown> {
+async function lookupCachedResult(ctx: RequestContext, key: string): Promise<unknown> {
   const [row] = await ctx.db
     .select()
     .from(requestIdempotency)
@@ -28,14 +25,8 @@ async function lookupCachedResult(
  * @param key - The idempotency key.
  * @param response - The successful response to store.
  */
-async function storeResult(
-  ctx: RequestContext,
-  key: string,
-  response: unknown,
-): Promise<void> {
-  await ctx.db
-    .insert(requestIdempotency)
-    .values({ userId: ctx.userId, key, response });
+async function storeResult(ctx: RequestContext, key: string, response: unknown): Promise<void> {
+  await ctx.db.insert(requestIdempotency).values({ userId: ctx.userId, key, response });
 }
 
 /**
