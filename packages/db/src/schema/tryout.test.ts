@@ -40,4 +40,9 @@ describe("tryout schema", () => {
     expect(tryoutAttemptsRelations).toBeDefined();
     expect(tryoutAnswersRelations).toBeDefined();
   });
+
+  it("allows null scores on an in-progress attempt", () => {
+    expect(tryoutAttempts.twkScore.notNull).toBe(false);
+    expect(tryoutAttempts.passedAll.notNull).toBe(false);
+  });
 });

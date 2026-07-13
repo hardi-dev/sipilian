@@ -224,6 +224,25 @@ export default tseslint.config(
     },
   },
   {
+    files: ["packages/api/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "react", message: "api must stay UI-free." },
+            { name: "react-native", message: "api must stay UI-free." },
+            {
+              name: "@sipilian/auth",
+              message: "api must not depend on auth; userId comes via ctx.",
+            },
+          ],
+          patterns: ["**/apps/**"],
+        },
+      ],
+    },
+  },
+  {
     files: ["packages/auth/**/*.ts"],
     rules: {
       "no-restricted-imports": [

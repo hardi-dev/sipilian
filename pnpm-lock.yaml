@@ -48,6 +48,31 @@ importers:
         specifier: ^8.63.0
         version: 8.63.0(eslint@9.39.5)(typescript@5.9.3)
 
+  packages/api:
+    dependencies:
+      '@sipilian/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sipilian/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@neondatabase/serverless@1.1.0)(kysely@0.29.3)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@26.1.1)(lightningcss@1.32.0))
+      vite:
+        specifier: ^8.1.4
+        version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(tsx@4.23.0)
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@26.1.1)(lightningcss@1.32.0)
+
   packages/auth:
     dependencies:
       '@better-auth/expo':
