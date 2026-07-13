@@ -45,6 +45,7 @@ These rules mirror the design spec §9 and are enforced by `pnpm lint` / `pnpm t
 - **`db`:** schema split by domain area; **only `src/client.ts`** may import `@neondatabase/serverless` — everything else uses the shared `db`. Inferred `$inferSelect`/`$inferInsert` are the row-type source of truth; no hand-written row interfaces. `(lint)`
 - **`auth`:** client via subpath exports (`@sipilian/auth/client-web`, `/client-expo`); roles as named constants; auth tables' schema stays in `db`. `(lint)`
 - **`api`:** feature folders with co-located `*.schema.ts` + `*.handler.ts`; handlers stay thin (parse → delegate to `core`/`db` → map `Result` to HTTP). Handlers must NOT `throw` for expected errors — return mapped HTTP errors. `(convention)`
+- **`packages/api/**/*.handler.ts`:** never `throw` for expected errors — return `Err(ApiError)` from `http.ts`. Only genuine bugs/invariants may throw (caught by the Fase 5 central handler). userId always arrives via `ctx`; handlers never import `@sipilian/auth`. `(convention)`
 - **`apps/web`:** admin UI must not import `packages/db` (go through `api`); components never call server functions directly (use hooks); `react`/`react-hooks`/`jsx-a11y` enabled. `(lint)`
 - **`apps/mobile`:** feature-based (`features/<name>/{components,hooks,api,screens}`); server-state via TanStack Query, UI-state via Zustand — server data never in Zustand, no business logic in stores `(convention)`; NativeWind-only (no `StyleSheet` import); no `packages/db` import. `(lint + convention)`
 
