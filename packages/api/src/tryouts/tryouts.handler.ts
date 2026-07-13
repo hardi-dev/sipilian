@@ -361,6 +361,39 @@ async function computeScoresForInput(
 }
 
 /**
+ * Inputs for persisting and returning tryout results.
+ */
+interface PersistInput {
+  readonly ctx: RequestContext;
+  readonly attemptId: string;
+  readonly input: SubmitTryoutInput;
+  readonly scoresResult: readonly SubtestScore[];
+  readonly overall: TryoutScore;
+}
+
+/**
+ * Persists tryout answers and scores, returns the result.
+ * @param args - The persistence inputs.
+ * @returns The tryout result.
+ */
+async function persistAndReturn(args: PersistInput): Promise<SubmitTryoutResult> {
+  await saveAnswers(args.ctx.db, args.attemptId, args.input.answers);
+  await updateAttemptScores({
+    database: args.ctx.db,
+    attemptId: args.attemptId,
+    scores: args.scoresResult,
+    overall: args.overall,
+    now: args.ctx.now,
+  });
+
+  return {
+    subtests: args.scoresResult,
+    totalScore: args.overall.totalScore,
+    passedAll: args.overall.passedAll,
+  };
+}
+
+/**
  * Runs the idempotent side-effects inside submitTryout.
  * @param input - The validated tryout submission.
  * @param ctx - The request context.
@@ -376,18 +409,15 @@ async function executeSubmit(
 
   const scoresResult = await computeScoresForInput(ctx, input);
   const overall = scoreTryout(scoresResult);
-
-  await saveAnswers(ctx.db, attemptResult.value.id, input.answers);
-  await updateAttemptScores({
-    database: ctx.db, attemptId: attemptResult.value.id,
-    scores: scoresResult, overall, now: ctx.now,
+  const result = await persistAndReturn({
+    ctx,
+    attemptId: attemptResult.value.id,
+    input,
+    scoresResult,
+    overall,
   });
 
-  const value: SubmitTryoutResult = {
-    subtests: scoresResult, totalScore: overall.totalScore, passedAll: overall.passedAll,
-  };
-
-  return ok(value);
+  return ok(result);
 }
 
 /**
