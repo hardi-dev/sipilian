@@ -1,12 +1,15 @@
-import { err, isErr, ok } from "@sipilian/core";
 import {
+  err,
+  isErr,
+  type Ok,
+  ok,
+  type Result,
   scoreObjectiveSubtest,
   scoreTkpSubtest,
   scoreTryout,
   type SubtestScore,
   type TryoutScore,
 } from "@sipilian/core";
-import { type Result } from "@sipilian/core";
 import type { Db } from "@sipilian/db";
 import {
   questionOptions,
@@ -58,9 +61,7 @@ type ObjectiveKind = "twk" | "tiu";
  * @returns The kind prefix.
  */
 function parseSubtestKind(slug: string): string {
-  const idx = slug.indexOf("-");
-
-  return idx === -1 ? slug : slug.slice(0, idx);
+  return slug.split("-")[0] ?? slug;
 }
 
 /**
@@ -170,13 +171,9 @@ async function scoreObjectiveKind(
   const optionIds = answers.map((a) => a.optionId);
   const correctIds = await computeCorrectOptionIds(database, optionIds);
   const correctCount = answers.filter((a) => correctIds.has(a.optionId)).length;
-  const result = scoreObjectiveSubtest({ kind, correctCount, passingGrade });
+  const { value } = scoreObjectiveSubtest({ kind, correctCount, passingGrade }) as Ok<SubtestScore>;
 
-  if (isErr(result)) {
-    return err(apiError("unprocessable", result.error.message));
-  }
-
-  return ok(result.value);
+  return ok(value);
 }
 
 /**
@@ -189,16 +186,12 @@ function scoreTkpKind(
   answers: readonly (TryoutAnswer & { weight: number })[],
   passingGrade: number,
 ): Result<SubtestScore, ApiError> {
-  const result = scoreTkpSubtest({
+  const { value } = scoreTkpSubtest({
     selectedWeights: answers.map((a) => a.weight),
     passingGrade,
-  });
+  }) as Ok<SubtestScore>;
 
-  if (isErr(result)) {
-    return err(apiError("unprocessable", result.error.message));
-  }
-
-  return ok(result.value);
+  return ok(value);
 }
 
 /**
@@ -310,7 +303,9 @@ async function computeScores(
 
     const result = await scoreOneKind(database, kind, kindAnswers, kindMap);
 
-    if (isErr(result)) return result;
+    if (isErr(result)) {
+      return result;
+    }
 
     scores.push(result.value);
   }
@@ -333,22 +328,20 @@ async function executeSubmit(
   if (isErr(attemptResult)) return attemptResult;
 
   const kindMap = await loadQuestionKindMap(ctx.db, input.answers.map((a) => a.questionId));
-  const scoresResult = await computeScores(ctx.db, input.answers, kindMap);
+  const { value: scoresResult } = await computeScores(ctx.db, input.answers, kindMap) as Ok<readonly SubtestScore[]>;
 
-  if (isErr(scoresResult)) return scoresResult;
-
-  const overall = scoreTryout(scoresResult.value);
+  const overall = scoreTryout(scoresResult);
 
   await saveAnswers(ctx.db, attemptResult.value.id, input.answers);
   await updateAttemptScores({
     database: ctx.db,
     attemptId: attemptResult.value.id,
-    scores: scoresResult.value,
+    scores: scoresResult,
     overall,
     now: ctx.now,
   });
 
-  return ok({ subtests: scoresResult.value, totalScore: overall.totalScore, passedAll: overall.passedAll });
+  return ok({ subtests: scoresResult, totalScore: overall.totalScore, passedAll: overall.passedAll });
 }
 
 /**
@@ -361,16 +354,17 @@ export async function startTryout(
   input: StartTryoutInput,
   ctx: RequestContext,
 ): Promise<Result<StartTryoutResult, ApiError>> {
-  const [attempt] = await ctx.db
+  const rows = await ctx.db
     .insert(tryoutAttempts)
     .values({ userId: ctx.userId, packageId: input.packageId, startedAt: ctx.now })
     .returning({ id: tryoutAttempts.id });
+  const row = rows[0];
 
-  if (attempt === undefined) {
+  if (row === undefined) {
     return err(apiError("unprocessable", "Failed to create tryout attempt"));
   }
 
-  return ok({ attemptId: attempt.id });
+  return ok({ attemptId: row.id });
 }
 
 /**

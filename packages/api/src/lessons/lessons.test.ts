@@ -1,4 +1,6 @@
 import { db } from "@sipilian/db";
+import { questionOptions } from "@sipilian/db/schema";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { SeededContent } from "../test-support";
@@ -59,6 +61,36 @@ describe("submitLesson", () => {
 
     if (result1.ok && result2.ok) {
       expect(result2.value).toEqual(result1.value);
+    }
+  });
+
+  it("handles wrong answers with zero quality and lower XP", async () => {
+    const ctx = testContext(db, seeded.userId);
+    const wrongOptions = await Promise.all(
+      seeded.questionIds.map(async (qId) => {
+        const [opt] = await db
+          .select({ id: questionOptions.id })
+          .from(questionOptions)
+          .where(and(eq(questionOptions.questionId, qId), eq(questionOptions.isCorrect, false)));
+
+        return opt!;
+      }),
+    );
+    const answers = wrongOptions.map((opt) => ({
+      questionId: seeded.questionIds[0]!,
+      optionId: opt.id,
+    }));
+
+    const result = await submitLesson(
+      { lessonId: seeded.lessonId, answers, idempotencyKey: "ik-wrong" },
+      ctx,
+    );
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) {
+      expect(result.value.correctCount).toBe(0);
+      expect(result.value.xpEarned).toBe(0);
     }
   });
 });

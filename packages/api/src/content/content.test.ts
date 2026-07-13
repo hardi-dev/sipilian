@@ -47,4 +47,18 @@ describe("getLesson", () => {
       expect(result.value.questions[0]?.options.length).toBeGreaterThan(0);
     }
   });
+
+  it("returns not_found for a non-existent lesson", async () => {
+    const ctx = testContext(db, seeded.userId);
+    const result = await getLesson(
+      { lessonId: "00000000-0000-0000-0000-000000000000" },
+      ctx,
+    );
+
+    expect(result.ok).toBe(false);
+
+    if (!result.ok) {
+      expect(result.error.code).toBe("not_found");
+    }
+  });
 });

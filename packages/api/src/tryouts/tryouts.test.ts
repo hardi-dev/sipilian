@@ -216,3 +216,94 @@ describe("submitTryout", () => {
     }
   });
 });
+
+describe("submitTryout with TKP", () => {
+  interface TkpSeed {
+    readonly userId: string;
+    readonly packageId: string;
+    readonly questionId: string;
+    attemptId: string | undefined;
+  }
+
+  async function seedTkp(): Promise<TkpSeed> {
+    const tag = randomUUID().replace(/-/g, "").slice(0, 12);
+    const [user] = await db.insert(users).values({
+      id: sql`gen_random_uuid()`,
+      name: "TKP Test",
+      email: `tkp-${tag}@example.com`,
+    }).returning();
+    const [subtest] = await db.insert(subtests).values({
+      slug: `tkp-${tag}`,
+      name: "TKP",
+      passingGrade: 0,
+    }).returning();
+    const [topic] = await db.insert(topics).values({
+      subtestId: subtest!.id,
+      slug: "integritas",
+      name: "Integritas",
+    }).returning();
+    const [q] = await db.insert(questions).values({
+      topicId: topic!.id,
+      type: "multiple_choice",
+      status: "published",
+      difficulty: 1,
+      stem: "TKP Q1",
+    }).returning();
+    const [pkg] = await db.insert(tryoutPackages).values({
+      slug: `tkp-pkg-${tag}`,
+      name: "TKP Tryout",
+      durationMinutes: 30,
+      composition: { twk: 0, tiu: 0, tkp: 1 },
+    }).returning();
+
+    await db.insert(tryoutPackageQuestions).values({
+      packageId: pkg!.id,
+      questionId: q!.id,
+      order: 1,
+    });
+
+    return { userId: user!.id, packageId: pkg!.id, questionId: q!.id, attemptId: undefined };
+  }
+
+  async function cleanupTkp(seed: TkpSeed): Promise<void> {
+    await db.delete(users).where(eq(users.id, seed.userId));
+    await db.delete(tryoutPackages).where(eq(tryoutPackages.id, seed.packageId));
+  }
+
+  let tkpCtx: RequestContext;
+  let tkp: TkpSeed;
+
+  beforeAll(async () => {
+    tkp = await seedTkp();
+    tkpCtx = testContext(db, tkp.userId);
+    const started = await startTryout({ packageId: tkp.packageId }, tkpCtx);
+
+    if (started.ok) {
+      tkp.attemptId = started.value.attemptId;
+    }
+  });
+
+  afterAll(async () => {
+    await cleanupTkp(tkp);
+  });
+
+  it("scores TKP answers with weights", async () => {
+    const result = await submitTryout(
+      {
+        attemptId: tkp.attemptId!,
+        answers: [{ questionId: tkp.questionId, weight: 4 }],
+        idempotencyKey: "tkp-1",
+      },
+      tkpCtx,
+    );
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) {
+      expect(result.value.subtests).toHaveLength(1);
+      expect(result.value.subtests[0]?.kind).toBe("tkp");
+      expect(result.value.subtests[0]?.rawScore).toBe(4);
+      expect(result.value.totalScore).toBe(4);
+    }
+  });
+});
