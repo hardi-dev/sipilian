@@ -45,6 +45,9 @@ jobs:
 
       - run: pnpm typecheck
 
+  test:
+    runs-on: ubuntu-latest
+
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
