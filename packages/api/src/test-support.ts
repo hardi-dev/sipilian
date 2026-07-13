@@ -11,6 +11,7 @@ import {
   units,
   users,
 } from "@sipilian/db/schema";
+import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 
 import type { RequestContext } from "./context";
@@ -135,12 +136,13 @@ async function seedLessonQuestion(
  * @returns The new user's id.
  */
 async function seedUser(database: Database): Promise<string> {
+  const tag = randomUUID().replace(/-/g, "").slice(0, 12);
   const [row] = await database
     .insert(users)
     .values({
       id: sql`gen_random_uuid()`,
       name: "API Test",
-      email: `api-${Date.now().toString()}@example.com`,
+      email: `api-${tag}@example.com`,
     })
     .returning();
 
@@ -153,9 +155,10 @@ async function seedUser(database: Database): Promise<string> {
  * @returns The new subtest's id.
  */
 async function seedSubtest(database: Database): Promise<string> {
+  const tag = randomUUID().replace(/-/g, "").slice(0, 8);
   const [row] = await database
     .insert(subtests)
-    .values({ slug: `twk-${Date.now().toString()}`, name: "TWK", passingGrade: 65 })
+    .values({ slug: `twk-${tag}`, name: "TWK", passingGrade: 65 })
     .returning();
 
   return requireRow(row, "subtest").id;
@@ -248,10 +251,11 @@ async function seedOneQuestionWithOptions(
  * @returns The new package's id.
  */
 async function seedPackage(database: Database, questionIds: string[]): Promise<string> {
+  const tag = randomUUID().replace(/-/g, "").slice(0, 8);
   const [pkg] = await database
     .insert(tryoutPackages)
     .values({
-      slug: `skd-${Date.now().toString()}`,
+      slug: `skd-${tag}`,
       name: "Tryout",
       durationMinutes: 100,
       composition: { twk: 2, tiu: 0, tkp: 0 },
