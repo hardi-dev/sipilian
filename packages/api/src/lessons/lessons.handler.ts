@@ -114,6 +114,36 @@ async function loadCorrectOptionIds(
 }
 
 /**
+ * Builds the review values object for a user-question SM-2 upsert.
+ * @param ctx - The request context.
+ * @param questionId - The question being reviewed.
+ * @param quality - The recall quality (0-5) for SM-2 scheduling.
+ * @param nextDate - The base date for computing nextReviewAt.
+ * @returns The values object for the upsert.
+ */
+function buildReviewValues(
+  ctx: RequestContext,
+  questionId: string,
+  quality: number,
+  nextDate: Date,
+): typeof userQuestionStates.$inferInsert {
+  const state = scheduleReview({
+    previous: { repetitions: 0, intervalDays: 0, easeFactor: 2.5 },
+    quality,
+  });
+
+  return {
+    userId: ctx.userId,
+    questionId,
+    repetitions: state.repetitions,
+    intervalDays: state.intervalDays,
+    easeFactor: state.easeFactor.toFixed(2),
+    nextReviewAt: new Date(nextDate.getTime() + state.intervalDays * 86_400_000),
+    lastReviewedAt: ctx.now,
+  };
+}
+
+/**
  * Writes the spaced-repetition review state for a single question.
  * @param ctx - The request context.
  * @param questionId - The question being reviewed.
@@ -126,20 +156,7 @@ async function upsertReviewState(
   quality: number,
   nextDate: Date,
 ): Promise<void> {
-  const state = scheduleReview({
-    previous: { repetitions: 0, intervalDays: 0, easeFactor: 2.5 },
-    quality,
-  });
-  const nextReviewAt = new Date(nextDate.getTime() + state.intervalDays * 86_400_000);
-  const rv = {
-    userId: ctx.userId,
-    questionId,
-    repetitions: state.repetitions,
-    intervalDays: state.intervalDays,
-    easeFactor: state.easeFactor.toFixed(2),
-    nextReviewAt,
-    lastReviewedAt: ctx.now,
-  };
+  const rv = buildReviewValues(ctx, questionId, quality, nextDate);
 
   await ctx.db
     .insert(userQuestionStates)

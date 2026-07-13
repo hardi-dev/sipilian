@@ -249,6 +249,33 @@ async function updateAttemptScores(input: UpdateScoresInput): Promise<void> {
 }
 
 /**
+ * Resolves the first answer and its kind info, or returns an error.
+ * @param kindAnswers - The answers for a subtest kind.
+ * @param kindMap - Map from question id to kind info.
+ * @param kind - The subtest kind label.
+ * @returns Ok with the pair, or Err when either is missing.
+ */
+function resolveFirstAnswer(
+  kindAnswers: readonly TryoutAnswer[],
+  kindMap: Map<string, QuestionKindInfo>,
+  kind: string,
+): Result<{ first: TryoutAnswer; info: QuestionKindInfo }, ApiError> {
+  const first = kindAnswers[0];
+
+  if (first === undefined) {
+    return err(apiError("unprocessable", `No answers for subtest ${kind}`));
+  }
+
+  const info = kindMap.get(first.questionId);
+
+  if (info === undefined) {
+    return err(apiError("unprocessable", `Unknown question ${first.questionId}`));
+  }
+
+  return ok({ first, info });
+}
+
+/**
  * Scores one subtest kind from the filtered answers, looking up the passing grade.
  * @param database - The Drizzle instance.
  * @param kind - The kind to score.
@@ -262,17 +289,11 @@ async function scoreOneKind(
   kindAnswers: readonly TryoutAnswer[],
   kindMap: Map<string, QuestionKindInfo>,
 ): Promise<Result<SubtestScore, ApiError>> {
-  const first = kindAnswers[0];
+  const resolved = resolveFirstAnswer(kindAnswers, kindMap, kind);
 
-  if (first === undefined) {
-    return err(apiError("unprocessable", `No answers for subtest ${kind}`));
-  }
+  if (isErr(resolved)) return resolved;
 
-  const info = kindMap.get(first.questionId);
-
-  if (info === undefined) {
-    return err(apiError("unprocessable", `Unknown question ${first.questionId}`));
-  }
+  const { info } = resolved.value;
 
   if (kind === "tkp") {
     return scoreTkpKind(kindAnswers.filter(hasWeight), info.passingGrade);
@@ -319,6 +340,22 @@ async function computeScores(
 }
 
 /**
+ * Computes scores for a tryout submission; always returns Ok since scoring errors are handled internally.
+ * @param ctx - The request context.
+ * @param input - The validated tryout submission.
+ * @returns The per-subtest scores.
+ */
+async function computeScoresForInput(
+  ctx: RequestContext,
+  input: SubmitTryoutInput,
+): Promise<readonly SubtestScore[]> {
+  const kindMap = await loadQuestionKindMap(ctx.db, input.answers.map((a) => a.questionId));
+  const { value } = await computeScores(ctx.db, input.answers, kindMap) as Ok<readonly SubtestScore[]>;
+
+  return value;
+}
+
+/**
  * Runs the idempotent side-effects inside submitTryout.
  * @param input - The validated tryout submission.
  * @param ctx - The request context.
@@ -332,14 +369,7 @@ async function executeSubmit(
 
   if (isErr(attemptResult)) return attemptResult;
 
-  const kindMap = await loadQuestionKindMap(
-    ctx.db,
-    input.answers.map((a) => a.questionId),
-  );
-  const { value: scoresResult } = (await computeScores(ctx.db, input.answers, kindMap)) as Ok<
-    readonly SubtestScore[]
-  >;
-
+  const scoresResult = await computeScoresForInput(ctx, input);
   const overall = scoreTryout(scoresResult);
 
   await saveAnswers(ctx.db, attemptResult.value.id, input.answers);
@@ -351,11 +381,7 @@ async function executeSubmit(
     now: ctx.now,
   });
 
-  return ok({
-    subtests: scoresResult,
-    totalScore: overall.totalScore,
-    passedAll: overall.passedAll,
-  });
+  return ok({ subtests: scoresResult, totalScore: overall.totalScore, passedAll: overall.passedAll });
 }
 
 /**

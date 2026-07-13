@@ -44,6 +44,32 @@ async function loadCurrentState(
 }
 
 /**
+ * Builds the review insert values for a sync operation.
+ * @param ctx - The request context.
+ * @param questionId - The question being synced.
+ * @param state - The SM-2 review state from core.
+ * @param state.repetitions - Successful review count.
+ * @param state.intervalDays - Next interval in days.
+ * @param state.easeFactor - SM-2 ease factor.
+ * @returns The values object for the upsert.
+ */
+function buildSyncValues(
+  ctx: RequestContext,
+  questionId: string,
+  state: ReviewState,
+): typeof userQuestionStates.$inferInsert {
+  return {
+    userId: ctx.userId,
+    questionId,
+    repetitions: state.repetitions,
+    intervalDays: state.intervalDays,
+    easeFactor: state.easeFactor.toFixed(2),
+    nextReviewAt: new Date(ctx.now.getTime() + state.intervalDays * 86_400_000),
+    lastReviewedAt: ctx.now,
+  };
+}
+
+/**
  * Upserts the SM-2 review state for a single question after a sync attempt.
  * @param ctx - The request context.
  * @param questionId - The question being reviewed.
@@ -56,16 +82,7 @@ async function upsertQuestionProgress(
 ): Promise<void> {
   const previous = await loadCurrentState(ctx.db, ctx.userId, questionId);
   const state = scheduleReview({ previous, quality });
-  const nextReviewAt = new Date(ctx.now.getTime() + state.intervalDays * 86_400_000);
-  const rv = {
-    userId: ctx.userId,
-    questionId,
-    repetitions: state.repetitions,
-    intervalDays: state.intervalDays,
-    easeFactor: state.easeFactor.toFixed(2),
-    nextReviewAt,
-    lastReviewedAt: ctx.now,
-  };
+  const rv = buildSyncValues(ctx, questionId, state);
 
   await ctx.db
     .insert(userQuestionStates)
